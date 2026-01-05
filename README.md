@@ -63,11 +63,45 @@ npm run preview
 
 The project is configured for Railway deployment:
 
-- **Build Command**: `npm run build`
-- **Start Command**: `vite preview --port $PORT --host`
-- **Port**: Uses Railway's `$PORT` environment variable
+### Railway Configuration
 
-The game will automatically adapt to Railway's public URL.
+**Build Command:**
+```bash
+npm run build
+```
+
+**Start Command:**
+```bash
+npm start
+```
+(Or alternatively: `vite preview --port $PORT --host`)
+
+**Port:** Uses Railway's `$PORT` environment variable automatically
+
+### Setup Instructions
+
+1. **Connect Repository:**
+   - Go to [Railway](https://railway.app)
+   - Click "New Project" → "Deploy from GitHub repo"
+   - Select your repository: `YJac16/WBTS-Shadows-Over-Blackthorn-Manor`
+
+2. **Configure Build Settings:**
+   - Railway will auto-detect the build settings from `package.json`
+   - Build Command: `npm run build`
+   - Start Command: `npm start`
+
+3. **Deploy:**
+   - Railway will automatically build and deploy
+   - The game will be available at your Railway-provided URL
+
+### Alternative: Manual Configuration
+
+If Railway doesn't auto-detect, manually set:
+- **Build Command:** `npm run build`
+- **Start Command:** `npm start`
+- **Root Directory:** `/` (default)
+
+The game will automatically adapt to Railway's public URL and port.
 
 ## Project Structure
 
