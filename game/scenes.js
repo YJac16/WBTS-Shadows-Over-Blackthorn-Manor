@@ -341,16 +341,10 @@ export function getSuspect(suspectId) {
 }
 
 /**
- * Get weapons for active solution
- * @returns {array} Array of weapon objects
+ * Get all possible weapons (not solution-specific)
+ * @returns {array} Array of all weapon objects
  */
-export function getWeapons() {
-    if (!gameState.solution) {
-        return [];
-    }
-    
-    const weaponIds = getWeaponsForSolution(gameState.solution);
-    
+export function getAllWeapons() {
     const weaponDefinitions = {
         letterOpener: {
             id: 'letterOpener',
@@ -369,7 +363,15 @@ export function getWeapons() {
         }
     };
     
-    return weaponIds.map(id => weaponDefinitions[id]).filter(Boolean);
+    return Object.values(weaponDefinitions);
+}
+
+/**
+ * Get weapons for active solution (legacy function for compatibility)
+ * @returns {array} Array of weapon objects
+ */
+export function getWeapons() {
+    return getAllWeapons();
 }
 
 /**

@@ -61,36 +61,53 @@ export function initUI() {
             }
         });
     }
+    
+    // Initialize character names in mobile nav
+    updateNavCharacters();
 }
 
 /**
  * Update game stats display
  */
 export function updateStats() {
+    // Update mobile nav stats
     const timeElement = document.getElementById('time-value');
     const suspicionElement = document.getElementById('suspicion-value');
     
-    if (timeElement) {
-        timeElement.textContent = gameState.timeRemaining;
-        
-        // Add warning classes based on time remaining
-        timeElement.classList.remove('warning', 'danger');
-        if (gameState.timeRemaining <= 3) {
-            timeElement.classList.add('danger');
-        } else if (gameState.timeRemaining <= 6) {
-            timeElement.classList.add('warning');
-        }
-    }
+    // Update desktop stats
+    const timeElementDesktop = document.getElementById('time-value-desktop');
+    const suspicionElementDesktop = document.getElementById('suspicion-value-desktop');
     
-    if (suspicionElement) {
-        suspicionElement.textContent = gameState.suspicion;
-        
-        // Add warning class for high suspicion
-        suspicionElement.classList.remove('high');
-        if (gameState.suspicion >= 50) {
-            suspicionElement.classList.add('high');
+    const updateTimeElement = (element) => {
+        if (element) {
+            element.textContent = gameState.timeRemaining;
+            
+            // Add warning classes based on time remaining
+            element.classList.remove('warning', 'danger');
+            if (gameState.timeRemaining <= 3) {
+                element.classList.add('danger');
+            } else if (gameState.timeRemaining <= 6) {
+                element.classList.add('warning');
+            }
         }
-    }
+    };
+    
+    const updateSuspicionElement = (element) => {
+        if (element) {
+            element.textContent = gameState.suspicion;
+            
+            // Add warning class for high suspicion
+            element.classList.remove('high');
+            if (gameState.suspicion >= 50) {
+                element.classList.add('high');
+            }
+        }
+    };
+    
+    updateTimeElement(timeElement);
+    updateTimeElement(timeElementDesktop);
+    updateSuspicionElement(suspicionElement);
+    updateSuspicionElement(suspicionElementDesktop);
 }
 
 /**
@@ -155,6 +172,39 @@ export function renderChoices(actions, onActionClick) {
 }
 
 /**
+ * Update character names in mobile nav
+ */
+function updateNavCharacters() {
+    const navCharacters = document.getElementById('nav-characters');
+    if (!navCharacters) {
+        return;
+    }
+    
+    navCharacters.innerHTML = '';
+    
+    Object.values(suspects).forEach(suspect => {
+        const profile = gameState.characterProfiles[suspect.id];
+        if (!profile || !profile.unlocked) {
+            return; // Only show characters after speaking with them
+        }
+        
+        const charButton = document.createElement('button');
+        charButton.className = 'nav-button';
+        charButton.textContent = suspect.name;
+        charButton.dataset.panel = 'profiles';
+        charButton.dataset.suspectId = suspect.id;
+        charButton.addEventListener('click', (e) => {
+            showMobilePanel('profiles', suspect.id);
+        });
+        navCharacters.appendChild(charButton);
+    });
+    
+    if (navCharacters.children.length === 0) {
+        navCharacters.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">Speak with characters to unlock their profiles.</p>';
+    }
+}
+
+/**
  * Update journal display
  */
 export function updateJournal() {
@@ -175,6 +225,12 @@ export function updateJournal() {
             panelContent.appendChild(mobileJournal);
         }
     }
+    
+    // Update character profiles in desktop sidebar
+    updateProfilesSidebar();
+    
+    // Update character names in mobile nav
+    updateNavCharacters();
 }
 
 /**
@@ -213,8 +269,9 @@ function updateJournalContent(container) {
 /**
  * Show mobile panel
  * @param {string} panelName - Panel name ('journal', 'profiles', 'settings')
+ * @param {string} suspectId - Optional suspect ID to show specific profile
  */
-function showMobilePanel(panelName) {
+function showMobilePanel(panelName, suspectId = null) {
     currentPanel = panelName;
     const panelOverlay = document.getElementById('mobile-panel-overlay');
     const panelContent = document.getElementById('panel-content');
@@ -238,7 +295,7 @@ function showMobilePanel(panelName) {
             renderJournalPanel(panelContent);
             break;
         case 'profiles':
-            renderProfilesPanel(panelContent);
+            renderProfilesPanel(panelContent, suspectId);
             break;
         case 'settings':
             renderSettingsPanel(panelContent);
@@ -270,13 +327,89 @@ function renderJournalPanel(container) {
 }
 
 /**
- * Render character profiles panel
- * @param {HTMLElement} container - Container element
+ * Update character profiles in desktop sidebar
  */
-function renderProfilesPanel(container) {
-    container.innerHTML = '<h2>Character Profiles</h2>';
+function updateProfilesSidebar() {
+    const profilesContent = document.getElementById('profiles-content');
+    if (!profilesContent) {
+        return;
+    }
+    
+    profilesContent.innerHTML = '';
+    
+    let hasUnlockedProfiles = false;
     
     Object.values(suspects).forEach(suspect => {
+        const profile = gameState.characterProfiles[suspect.id];
+        if (!profile || !profile.unlocked) {
+            return; // Don't show locked profiles
+        }
+        
+        hasUnlockedProfiles = true;
+        
+        const profileDiv = document.createElement('div');
+        profileDiv.className = 'character-profile';
+        
+        // Get supporting/contradicting clues
+        const supportingClues = getCluesSupporting(suspect.id);
+        const contradictingClues = getCluesContradicting(suspect.id);
+        
+        let profileHTML = `
+            <div class="profile-header">
+                <h3>${suspect.name}</h3>
+                <div class="profile-title">${suspect.title}</div>
+                <div class="profile-role">${suspect.role}</div>
+            </div>
+            <div class="profile-description">${suspect.description}</div>
+        `;
+        
+        if (profile.facts.length > 0) {
+            profileHTML += '<div class="profile-section"><h4>Known Facts</h4><ul>';
+            profile.facts.forEach(fact => {
+                profileHTML += `<li>${fact}</li>`;
+            });
+            profileHTML += '</ul></div>';
+        }
+        
+        if (profile.suspicious.length > 0) {
+            profileHTML += '<div class="profile-section suspicious"><h4>Suspicious Behavior</h4><ul>';
+            profile.suspicious.forEach(behavior => {
+                profileHTML += `<li>${behavior}</li>`;
+            });
+            profileHTML += '</ul></div>';
+        }
+        
+        if (supportingClues.length > 0) {
+            profileHTML += `<div class="profile-section"><h4>Supporting Evidence (${supportingClues.length})</h4><p>Clues point to this suspect.</p></div>`;
+        }
+        
+        if (contradictingClues.length > 0) {
+            profileHTML += `<div class="profile-section contradicting"><h4>Contradicting Evidence (${contradictingClues.length})</h4><p>Some clues contradict this suspect's involvement.</p></div>`;
+        }
+        
+        profileDiv.innerHTML = profileHTML;
+        profilesContent.appendChild(profileDiv);
+    });
+    
+    // Show message if no profiles unlocked
+    if (!hasUnlockedProfiles) {
+        profilesContent.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">Interrogate suspects and examine objects to unlock character profiles.</p>';
+    }
+}
+
+/**
+ * Render character profiles panel
+ * @param {HTMLElement} container - Container element
+ * @param {string} suspectId - Optional specific suspect ID to show
+ */
+function renderProfilesPanel(container, suspectId = null) {
+    container.innerHTML = '<h2>Character Profiles</h2>';
+    
+    const suspectsToShow = suspectId 
+        ? [suspects[suspectId]].filter(Boolean)
+        : Object.values(suspects);
+    
+    suspectsToShow.forEach(suspect => {
         const profile = gameState.characterProfiles[suspect.id];
         if (!profile || !profile.unlocked) {
             return; // Don't show locked profiles
@@ -493,22 +626,26 @@ export function renderAccusationInterface(accusationData, onAccuse) {
     const weaponSection = document.createElement('div');
     weaponSection.innerHTML = '<h3 style="margin: 1.5rem 0 1rem 0; font-size: 1.1rem;">What was the murder weapon?</h3>';
     
-    accusationData.weapons.forEach(weapon => {
-        const button = document.createElement('button');
-        button.className = 'choice-button';
-        button.textContent = `${weapon.name} - ${weapon.description}`;
-        button.dataset.weaponId = weapon.id;
-        button.addEventListener('click', () => {
-            // Remove previous selection
-            document.querySelectorAll('[data-weapon-id]').forEach(btn => {
-                btn.classList.remove('selected');
+    if (accusationData.weapons.length === 0) {
+        weaponSection.innerHTML += '<p style="color: var(--text-muted); font-style: italic; margin-bottom: 1rem;">You have not discovered any weapons yet. Continue investigating to find evidence of the murder weapon.</p>';
+    } else {
+        accusationData.weapons.forEach(weapon => {
+            const button = document.createElement('button');
+            button.className = 'choice-button';
+            button.textContent = `${weapon.name} - ${weapon.description}`;
+            button.dataset.weaponId = weapon.id;
+            button.addEventListener('click', () => {
+                // Remove previous selection
+                document.querySelectorAll('[data-weapon-id]').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                button.classList.add('selected');
+                gameState.accusation.weapon = weapon.id;
+                checkAccusationReady(onAccuse);
             });
-            button.classList.add('selected');
-            gameState.accusation.weapon = weapon.id;
-            checkAccusationReady(onAccuse);
+            weaponSection.appendChild(button);
         });
-        weaponSection.appendChild(button);
-    });
+    }
     
     choicesContainer.appendChild(weaponSection);
     
@@ -525,6 +662,21 @@ export function renderAccusationInterface(accusationData, onAccuse) {
         }
     });
     choicesContainer.appendChild(finalButton);
+    
+    // Go Back button
+    const goBackButton = document.createElement('button');
+    goBackButton.className = 'choice-button';
+    goBackButton.textContent = 'Go Back to Investigation';
+    goBackButton.style.marginTop = '1rem';
+    goBackButton.addEventListener('click', () => {
+        // Reset accusation phase and selections
+        gameState.phase = 'investigation';
+        gameState.accusation.suspect = null;
+        gameState.accusation.weapon = null;
+        // Trigger UI update by dispatching a custom event
+        window.dispatchEvent(new CustomEvent('gameStateChanged'));
+    });
+    choicesContainer.appendChild(goBackButton);
 }
 
 /**

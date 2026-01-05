@@ -19,8 +19,8 @@ import { getRandomSolution } from './solutions.js';
 
 export const gameState = {
     // Time system
-    timeRemaining: 12,
-    maxTime: 12,
+    timeRemaining: 20,
+    maxTime: 20,
     
     // Suspicion system
     suspicion: 0,
@@ -34,6 +34,7 @@ export const gameState = {
     examinedObjects: new Set(),
     interrogatedSuspects: new Set(),
     collectedClues: new Set(),
+    discoveredWeapons: new Set(), // Weapons discovered through evidence
     
     // Clue journal entries
     journalEntries: [],
@@ -68,13 +69,14 @@ export const gameState = {
  * Randomly selects a new solution profile
  */
 export function resetGameState() {
-    gameState.timeRemaining = 12;
+    gameState.timeRemaining = 20;
     gameState.suspicion = 0;
     gameState.currentLocation = 'grandHall';
     gameState.visitedRooms = new Set(['grandHall']);
     gameState.examinedObjects = new Set();
     gameState.interrogatedSuspects = new Set();
     gameState.collectedClues = new Set();
+    gameState.discoveredWeapons = new Set();
     gameState.journalEntries = [];
     gameState.characterProfiles = {
         eleanor: { unlocked: false, facts: [], suspicious: [] },
@@ -142,7 +144,7 @@ export function addClue(clueId, title, text) {
  * Conditions: Low time remaining or enough clues collected
  */
 export function canAccuse() {
-    return gameState.timeRemaining <= 3 || gameState.collectedClues.size >= 6;
+    return gameState.timeRemaining <= 10 || gameState.collectedClues.size >= 6;
 }
 
 /**

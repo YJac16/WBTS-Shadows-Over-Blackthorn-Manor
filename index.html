@@ -23,20 +23,23 @@
                 <div class="nav-section">
                     <h3>Game Info</h3>
                     <div id="nav-stats">
-                        <div id="time-remaining">Time: <span id="time-value">12</span></div>
+                        <div id="time-remaining">Time: <span id="time-value">20</span></div>
                         <div id="suspicion-level">Suspicion: <span id="suspicion-value">0</span></div>
                     </div>
                 </div>
                 <div class="nav-section">
                     <button class="nav-button" data-panel="journal">Clue Journal</button>
-                    <button class="nav-button" data-panel="profiles">Character Profiles</button>
                     <button class="nav-button" data-panel="settings">Settings</button>
+                </div>
+                <div class="nav-section">
+                    <h3>Characters</h3>
+                    <div id="nav-characters"></div>
                 </div>
             </nav>
             
             <div id="game-stats" class="desktop-stats">
-                <div id="time-remaining">Time: <span id="time-value">12</span></div>
-                <div id="suspicion-level">Suspicion: <span id="suspicion-value">0</span></div>
+                <div id="time-remaining">Time: <span id="time-value-desktop">20</span></div>
+                <div id="suspicion-level">Suspicion: <span id="suspicion-value-desktop">0</span></div>
             </div>
             
             <main id="game-content">
@@ -47,6 +50,8 @@
             <aside id="journal-sidebar" class="desktop-sidebar">
                 <div id="journal-header">Clue Journal</div>
                 <div id="journal-content"></div>
+                <div id="profiles-header" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-subtle);">Character Profiles</div>
+                <div id="profiles-content"></div>
             </aside>
         </div>
         

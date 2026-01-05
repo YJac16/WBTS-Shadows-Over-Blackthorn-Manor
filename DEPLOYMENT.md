@@ -107,3 +107,4 @@ If Railway doesn't auto-detect:
 - The game is a static site, so no database or backend is required
 - All game logic runs client-side in the browser
 
+

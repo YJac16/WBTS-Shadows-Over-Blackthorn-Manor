@@ -247,3 +247,4 @@ To change the solution, update `gameState.trueSolution` in `state.js` and adjust
 - Ensure both suspect and weapon are selected before final accusation
 
 
+

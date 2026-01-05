@@ -77,6 +77,8 @@ function handleAction(action) {
             
         case 'examine':
             const examineResult = examineObject(action.target);
+            // Always update stats to show time consumption
+            updateStats();
             if (examineResult) {
                 if (examineResult.error) {
                     // Prerequisite not met - don't consume time, just show error
@@ -86,20 +88,32 @@ function handleAction(action) {
                     showExaminationResult(examineResult);
                     updateUI();
                 }
-            } else if (gameState.timeRemaining <= 0) {
-                // Time ran out during examination
-                updateUI();
+            } else {
+                // Time ran out or examination failed
+                if (gameState.timeRemaining <= 0) {
+                    updateUI();
+                } else {
+                    // Update UI even if examination failed for other reasons
+                    updateUI();
+                }
             }
             break;
             
         case 'interrogate':
             const interrogateResult = interrogateSuspect(action.target);
+            // Always update stats to show time consumption
+            updateStats();
             if (interrogateResult) {
                 showInterrogationResult(interrogateResult);
                 updateUI();
-            } else if (gameState.timeRemaining <= 0) {
-                // Time ran out during interrogation
-                updateUI();
+            } else {
+                // Time ran out or interrogation failed
+                if (gameState.timeRemaining <= 0) {
+                    updateUI();
+                } else {
+                    // Update UI even if interrogation failed for other reasons
+                    updateUI();
+                }
             }
             break;
             
@@ -122,6 +136,11 @@ function handleAccusation(suspectId, weaponId) {
     processAccusation(suspectId, weaponId);
     updateUI();
 }
+
+// Listen for game state changes (e.g., when going back from accusation)
+window.addEventListener('gameStateChanged', () => {
+    updateUI();
+});
 
 // Initialize game when DOM is ready
 if (document.readyState === 'loading') {

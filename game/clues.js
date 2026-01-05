@@ -227,3 +227,4 @@ export function getCluesContradicting(suspectId) {
         .map(clue => clue.id);
 }
 
+

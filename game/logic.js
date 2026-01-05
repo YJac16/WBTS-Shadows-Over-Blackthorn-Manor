@@ -10,7 +10,7 @@
  */
 
 import { gameState, consumeTime, increaseSuspicion, addClue, canAccuse, makeAccusation, updateCharacterProfile } from './state.js';
-import { rooms, getObject, getSuspect, getWeapons } from './scenes.js';
+import { rooms, getObject, getSuspect, getWeapons, getAllWeapons, suspects } from './scenes.js';
 import { getClueById } from './clues.js';
 import { getBestDialogue } from './dialogue.js';
 
@@ -59,18 +59,26 @@ export function examineObject(objectId) {
         return null; // Time ran out
     }
     
+    // Increase suspicion when examining objects (investigating raises suspicion)
+    increaseSuspicion(5);
+    
     gameState.examinedObjects.add(objectId);
     
     // Add clue if object has one (from dynamic clue system)
     if (obj.clue) {
         addClue(obj.clue.id, obj.clue.title, obj.clue.text);
+        // Don't update character profiles here - only update when speaking with suspects
         
-        // Update character profiles if clue supports/contradicts suspects
-        if (obj.clue.supports && obj.clue.supports.length > 0) {
-            obj.clue.supports.forEach(suspectId => {
-                updateCharacterProfile(suspectId, obj.clue.text, true);
-            });
+        // Discover weapons based on clues found (only specific evidence clues)
+        if (obj.clue.id === 'letter_opener_missing') {
+            gameState.discoveredWeapons.add('letterOpener');
+        } else if (obj.clue.id === 'fire_poker_evidence') {
+            gameState.discoveredWeapons.add('firePoker');
+        } else if (obj.clue.id === 'syringe_evidence') {
+            gameState.discoveredWeapons.add('syringe');
         }
+        // Note: body_examination describes the method but doesn't discover the weapon
+        // Players must find specific evidence to discover weapons
     }
     
     return {
@@ -214,13 +222,19 @@ export function getCurrentScene() {
  * @returns {object} - Available suspects and weapons for accusation
  */
 export function getAccusationData() {
+    // Only show weapons that have been discovered through evidence
+    const allWeapons = getAllWeapons();
+    const availableWeapons = allWeapons.filter(weapon => 
+        gameState.discoveredWeapons.has(weapon.id)
+    );
+    
     return {
         suspects: Object.values(suspects).map(s => ({
             id: s.id,
             name: s.name,
             title: s.title
         })),
-        weapons: getWeapons() // Dynamic weapons based on solution
+        weapons: availableWeapons // Only show discovered weapons
     };
 }
 

@@ -40,6 +40,8 @@ body {
     grid-template-rows: auto auto 1fr;
     gap: 1.5rem;
     min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
 }
 
 /* Header */
@@ -129,6 +131,12 @@ body {
     margin-bottom: 1rem;
     border-bottom: 1px solid var(--border-subtle);
     padding-bottom: 0.5rem;
+}
+
+#nav-characters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .nav-button {
@@ -319,20 +327,20 @@ body {
     color: var(--text-muted);
 }
 
-#time-value, #suspicion-value {
+#time-value, #suspicion-value, #time-value-desktop, #suspicion-value-desktop {
     color: var(--text-soft);
     font-weight: normal;
 }
 
-#time-value.warning {
+#time-value.warning, #time-value-desktop.warning {
     color: #d4a574;
 }
 
-#time-value.danger {
+#time-value.danger, #time-value-desktop.danger {
     color: #b8735a;
 }
 
-#suspicion-value.high {
+#suspicion-value.high, #suspicion-value-desktop.high {
     color: #b8735a;
 }
 
@@ -342,6 +350,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    min-height: 0;
+    overflow: hidden;
 }
 
 #scene-display {
@@ -352,6 +362,8 @@ body {
     min-height: 300px;
     font-size: 1.1rem;
     line-height: 1.8;
+    overflow-y: auto;
+    flex: 1 1 auto;
 }
 
 #scene-display h2 {
@@ -429,6 +441,56 @@ body {
     padding: 1.5rem;
     max-height: calc(100vh - 250px);
     overflow-y: auto;
+    min-height: 0;
+}
+
+#profiles-header {
+    font-size: 1.1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+    color: var(--text-soft);
+    margin-bottom: 1rem;
+}
+
+#profiles-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+#profiles-content .character-profile {
+    padding: 1rem;
+    margin-bottom: 0;
+}
+
+#profiles-content .profile-header h3 {
+    font-size: 1rem;
+}
+
+#profiles-content .profile-title,
+#profiles-content .profile-role {
+    font-size: 0.8rem;
+}
+
+#profiles-content .profile-description {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+#profiles-content .profile-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+#profiles-content .profile-section h4 {
+    font-size: 0.9rem;
+}
+
+#profiles-content .profile-section li {
+    font-size: 0.85rem;
 }
 
 .desktop-sidebar {
@@ -532,7 +594,10 @@ body {
         grid-template-columns: 1fr;
         grid-template-rows: auto auto 1fr;
         padding: 0.5rem;
-        gap: 1rem;
+        gap: 0.75rem;
+        min-height: 100vh;
+        max-height: 100vh;
+        overflow: hidden;
     }
     
     .nav-toggle {
@@ -548,28 +613,67 @@ body {
     }
     
     #game-header {
-        padding: 1rem 0 1rem 0;
+        padding: 0.75rem 0;
+        flex-shrink: 0;
     }
     
     #game-title {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
     
     #episode-title {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+    }
+    
+    #game-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        overflow: hidden;
+        min-height: 0;
     }
     
     #scene-display {
-        padding: 1.5rem;
-        font-size: 1rem;
+        padding: 1rem;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        overflow-y: auto;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 40vh;
+    }
+    
+    #choices-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 0 0 auto;
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+    
+    .choice-button {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
     }
     
     #modal-content {
         padding: 1.5rem;
+        max-height: 85vh;
     }
     
     .mobile-panel {
         padding: 1.5rem;
+        max-height: 90vh;
+    }
+    
+    #scene-display h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    #scene-display p {
+        margin-bottom: 0.75rem;
     }
 }
 
