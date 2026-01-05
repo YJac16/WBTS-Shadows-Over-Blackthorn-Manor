@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whispers Before the Silence: Shadows Over Blackthorn Manor</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="app">
+        <div id="game-container">
+            <header id="game-header">
+                <div id="game-title">Whispers Before the Silence</div>
+                <div id="episode-title">Shadows Over Blackthorn Manor</div>
+                <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </header>
+            
+            <nav id="mobile-nav" class="mobile-nav hidden">
+                <div class="nav-section">
+                    <h3>Game Info</h3>
+                    <div id="nav-stats">
+                        <div id="time-remaining">Time: <span id="time-value">12</span></div>
+                        <div id="suspicion-level">Suspicion: <span id="suspicion-value">0</span></div>
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <button class="nav-button" data-panel="journal">Clue Journal</button>
+                    <button class="nav-button" data-panel="profiles">Character Profiles</button>
+                    <button class="nav-button" data-panel="settings">Settings</button>
+                </div>
+            </nav>
+            
+            <div id="game-stats" class="desktop-stats">
+                <div id="time-remaining">Time: <span id="time-value">12</span></div>
+                <div id="suspicion-level">Suspicion: <span id="suspicion-value">0</span></div>
+            </div>
+            
+            <main id="game-content">
+                <div id="scene-display"></div>
+                <div id="choices-container"></div>
+            </main>
+            
+            <aside id="journal-sidebar" class="desktop-sidebar">
+                <div id="journal-header">Clue Journal</div>
+                <div id="journal-content"></div>
+            </aside>
+        </div>
+        
+        <!-- Mobile Panels (overlay) -->
+        <div id="mobile-panel-overlay" class="mobile-panel-overlay hidden">
+            <div id="mobile-panel" class="mobile-panel">
+                <button id="panel-close" class="panel-close">×</button>
+                <div id="panel-content"></div>
+            </div>
+        </div>
+        
+        <div id="modal-overlay" class="hidden">
+            <div id="modal-content">
+                <div id="modal-text"></div>
+                <div id="modal-actions"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
+
+

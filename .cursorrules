@@ -1,0 +1,59 @@
+# Whispers Before the Silence: Shadows Over Blackthorn Manor
+
+## Project Context
+This is Episode 1 of a browser-based, choice-driven murder mystery game series published under the Āthariq label. Built with Vite, HTML, CSS, and vanilla JavaScript.
+
+## Architecture Overview
+
+### Core Files
+- `index.html` - Main HTML entry point with game container structure
+- `style.css` - Dark, minimal styling matching Āthariq brand (dark background, soft off-white text)
+- `main.js` - Game initialization and main game loop, wires together all systems
+
+### Game Module (`game/` directory)
+- `state.js` - Central game state management. All game state lives in `gameState` object. Contains time system, suspicion, clues, accusation data, and true solution.
+- `scenes.js` - All game content: rooms, objects, suspects, weapons, endings. Data-driven, easy to extend.
+- `logic.js` - Core game mechanics: navigation, examination, interrogation, accusation handling. Pure functions that read/write to gameState.
+- `ui.js` - UI rendering system. Handles scene display, choice buttons, journal updates, modals, endings. Reads from gameState.
+
+## Key Design Principles
+- State is centralized in `gameState` object
+- Content is data-driven in `scenes.js`
+- Logic is separated from UI
+- No backend - everything runs client-side
+- Mobile-first responsive design
+- Minimal UI, text-first presentation
+- Dark theme, atmospheric, no bright colors
+
+## Game Mechanics
+- Time system: 12 turns, each action consumes time
+- Suspicion system: Actions can raise suspicion
+- Clue journal: Auto-updates as clues are discovered
+- Accusation phase: Player must choose murderer and weapon
+- Multiple endings based on correctness
+
+## True Solution (Hidden)
+- Murderer: Eleanor Blackthorn (id: 'eleanor')
+- Weapon: Poison (id: 'poison')
+
+## Extending the Game
+- Add rooms to `rooms` object in `scenes.js`
+- Add suspects to `suspects` object with dialogue trees
+- Add objects with clues to `objects` object
+- Add endings to `endings` object
+- Update `gameState.trueSolution` if changing the solution
+
+## Deployment
+- Railway-ready: uses `$PORT` environment variable
+- Build: `npm run build`
+- Preview: `vite preview --port $PORT --host`
+
+## Important Notes
+- Never hardcode story logic into UI components
+- Keep game state in `gameState` object only
+- All content should be in `scenes.js`
+- UI should only read from and trigger updates to gameState
+- Time consumption happens in logic.js functions
+- Clues are automatically added to journal when objects are examined
+
+
