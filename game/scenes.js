@@ -149,7 +149,7 @@ export const objects = {
     portrait: {
         id: 'portrait',
         name: 'Family Portrait',
-        description: 'A large portrait of the Blackthorn family. Charles and Eleanor stand together, but there\'s a distance between them. Behind the portrait, you discover something hidden.',
+        description: 'A large portrait of the Blackthorn family. Charles and Eleanor stand together, but there\'s a distance between them. The painting captures a moment of tension between the couple.',
         clueId: 'family_portrait'
     },
     
@@ -439,9 +439,11 @@ ${killerName}'s composure finally breaks. The truth hangs in the air like smoke.
         
         partial: {
             title: 'Incomplete Justice',
-            text: `You accuse ${accusedSuspectName} of the murder. ${accusedSuspectName === killerName ? 'They are indeed the killer.' : 'But your accusation is wrong.'}
+            text: `You accuse ${accusedSuspectName} of the murder using the ${accusedWeaponName}. ${accusedSuspectName === killerName && accusedWeapon === weaponId ? 'Your accusation is correct, but you haven\'t gathered enough evidence to prove it conclusively.' : accusedSuspectName === killerName ? `You identified the correct killer, but the weapon is wrong. The true weapon was the ${weaponName}.` : 'But your accusation is wrong.'}
 
-${accusedSuspectName === killerName 
+${accusedSuspectName === killerName && accusedWeapon === weaponId
+    ? `You have the right suspect and the right weapon, but you haven't discovered the full motive or confirmed the opportunity. More investigation was needed to build a complete case.`
+    : accusedSuspectName === killerName 
     ? `However, you identified the wrong weapon. The true method was the ${weaponName}. While you found the truth about the murderer, the full picture remains incomplete.`
     : `The evidence doesn't support your claim. The real killer remains at large.`}
 

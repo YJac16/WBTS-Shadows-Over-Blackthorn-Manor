@@ -45,7 +45,7 @@ export function getWeaponLocations() {
     return {
         poison_vial: 'medicalRoom',        // Medical Room
         fireplace_poker: 'eleanorRoom',    // Eleanor's Room
-        letter_opener: 'portrait',         // Behind family portrait (special case)
+        letter_opener: 'fireplace',        // Fireplace in Study
         scalpel: 'marcusRoom'              // Victor's Room
     };
 }

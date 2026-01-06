@@ -160,10 +160,30 @@ export function updateProfileFromDialogue(suspectId, dialogue) {
     
     // Add opportunity if they were alone with Charles or had access
     const narrativeNote = scenario.narrativeNotes[suspectId];
-    if (narrativeNote && (narrativeNote.includes('alone') || narrativeNote.includes('prepared') || narrativeNote.includes('with Charles'))) {
-        const opportunity = 'Had access to the victim at the time of death.';
-        if (!gameState.knownCharacters[suspectId].opportunities.includes(opportunity)) {
-            gameState.knownCharacters[suspectId].opportunities.push(opportunity);
+    if (narrativeNote) {
+        // Check for various opportunity indicators
+        const hasOpportunity = narrativeNote.includes('alone') || 
+                               narrativeNote.includes('prepared') || 
+                               narrativeNote.includes('with Charles') ||
+                               narrativeNote.includes('arrive') ||
+                               narrativeNote.includes('medical') ||
+                               (suspectId === scenario.culprit); // Culprit always had opportunity
+        
+        if (hasOpportunity) {
+            const opportunity = suspectId === 'doctor' 
+                ? 'Had medical access to the victim and was alone with him.'
+                : 'Had access to the victim at the time of death.';
+            if (!gameState.knownCharacters[suspectId].opportunities.includes(opportunity)) {
+                gameState.knownCharacters[suspectId].opportunities.push(opportunity);
+            }
         }
+    }
+    
+    // For the culprit, always ensure they have opportunity
+    if (isCulprit && gameState.knownCharacters[suspectId].opportunities.length === 0) {
+        const opportunity = suspectId === 'doctor' 
+            ? 'Had medical access to the victim and was alone with him.'
+            : 'Had access to the victim at the time of death.';
+        gameState.knownCharacters[suspectId].opportunities.push(opportunity);
     }
 }

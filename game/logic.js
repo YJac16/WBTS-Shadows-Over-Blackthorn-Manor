@@ -72,12 +72,16 @@ export function examineObject(objectId) {
         increaseSuspicion(10, 'examine_body'); // Examining body raises suspicion significantly
     }
     
+    // Track if a weapon was found during this examination
+    let foundWeapon = null;
+    
     // Check if a weapon is found by examining this object (e.g., letter opener behind portrait)
     const allWeapons = getAllWeapons();
     for (const weapon of allWeapons) {
         if (isWeaponInObject(weapon.id, objectId, gameState.weaponLocations)) {
             if (!gameState.foundWeapons.includes(weapon.id)) {
                 gameState.foundWeapons.push(weapon.id);
+                foundWeapon = weapon;
                 
                 // Check if weapon is consistent with autopsy
                 let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
@@ -99,6 +103,28 @@ export function examineObject(objectId) {
         if (isWeaponInRoom(weapon.id, currentRoom, gameState.weaponLocations)) {
             if (!gameState.foundWeapons.includes(weapon.id)) {
                 gameState.foundWeapons.push(weapon.id);
+                foundWeapon = weapon;
+                
+                // Check if weapon is consistent with autopsy
+                let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
+                if (gameState.autopsyUnlocked) {
+                    const isValid = isWeaponValidForScenario(weapon.id, gameState.activeScenario);
+                    if (!isValid) {
+                        weaponText += ' NOTE: This weapon is INCONSISTENT with the autopsy report.';
+                    }
+                }
+                
+                addClue(`weapon_${weapon.id}`, `Weapon Found: ${weapon.name}`, weaponText);
+            }
+        }
+    }
+    
+    // Check if a weapon is found by examining this object (e.g., letter opener in fireplace)
+    for (const weapon of allWeapons) {
+        if (isWeaponInObject(weapon.id, objectId, gameState.weaponLocations)) {
+            if (!gameState.foundWeapons.includes(weapon.id)) {
+                gameState.foundWeapons.push(weapon.id);
+                foundWeapon = weapon;
                 
                 // Check if weapon is consistent with autopsy
                 let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
@@ -123,7 +149,8 @@ export function examineObject(objectId) {
     return {
         name: obj.name,
         description: obj.description,
-        clue: obj.clue
+        clue: obj.clue,
+        foundWeapon: foundWeapon // Include weapon info if found
     };
 }
 

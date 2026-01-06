@@ -444,7 +444,23 @@ function updateProfilesSidebar() {
             profileHTML += `<div class="profile-section contradicting"><h4>Contradicting Evidence (${contradictingClues.length})</h4><p>Some clues contradict this suspect's involvement.</p></div>`;
         }
         
-        profileDiv.innerHTML = profileHTML;
+        // Desktop sidebar: Create accordion
+        const profileHeader = document.createElement('div');
+        profileHeader.className = 'profile-accordion-header';
+        profileHeader.innerHTML = `<span>${suspect.name}</span><span class="accordion-arrow">▼</span>`;
+        
+        const profileContent = document.createElement('div');
+        profileContent.className = 'profile-accordion-content';
+        profileContent.innerHTML = profileHTML;
+        
+        profileHeader.addEventListener('click', () => {
+            profileContent.classList.toggle('expanded');
+            const arrow = profileHeader.querySelector('.accordion-arrow');
+            arrow.textContent = profileContent.classList.contains('expanded') ? '▲' : '▼';
+        });
+        
+        profileDiv.appendChild(profileHeader);
+        profileDiv.appendChild(profileContent);
         profilesContent.appendChild(profileDiv);
     });
     
@@ -475,6 +491,7 @@ function renderProfilesPanel(container, suspectId = null) {
         
         const profileDiv = document.createElement('div');
         profileDiv.className = 'character-profile';
+        profileDiv.dataset.suspectId = suspect.id;
         
         // Get supporting/contradicting clues
         const supportingClues = getCluesSupporting(suspect.id);
@@ -549,7 +566,33 @@ function renderProfilesPanel(container, suspectId = null) {
             profileHTML += `<div class="profile-section contradicting"><h4>Contradicting Evidence (${contradictingClues.length})</h4><p>Some clues contradict this suspect's involvement.</p></div>`;
         }
         
-        profileDiv.innerHTML = profileHTML;
+        // Check if this is desktop sidebar (not mobile panel)
+        const isDesktopSidebar = container.id === 'profiles-content';
+        const isDesktop = window.innerWidth > 768;
+        
+        if (isDesktopSidebar && isDesktop) {
+            // Desktop sidebar: Create accordion
+            const profileHeader = document.createElement('div');
+            profileHeader.className = 'profile-accordion-header';
+            profileHeader.innerHTML = `<span>${suspect.name}</span><span class="accordion-arrow">▼</span>`;
+            
+            const profileContent = document.createElement('div');
+            profileContent.className = 'profile-accordion-content';
+            profileContent.innerHTML = profileHTML;
+            
+            profileHeader.addEventListener('click', () => {
+                profileContent.classList.toggle('expanded');
+                const arrow = profileHeader.querySelector('.accordion-arrow');
+                arrow.textContent = profileContent.classList.contains('expanded') ? '▲' : '▼';
+            });
+            
+            profileDiv.appendChild(profileHeader);
+            profileDiv.appendChild(profileContent);
+        } else {
+            // Mobile panel or single profile: show directly
+            profileDiv.innerHTML = profileHTML;
+        }
+        
         container.appendChild(profileDiv);
     });
     
@@ -852,9 +895,50 @@ export function showExaminationResult(result) {
             { text: 'Understood', onClick: null }
         ]);
     } else {
-        // Check if this is the portrait object - show image
         let modalContent = result.description;
-        if (result.name === 'Family Portrait' || result.name?.toLowerCase().includes('portrait')) {
+        
+        // Check if a weapon was found - show weapon image
+        if (result.foundWeapon) {
+            const weaponId = result.foundWeapon.id;
+            // Map weapon IDs to image keys
+            let imageKey = `evidence_${weaponId}`;
+            if (weaponId === 'letter_opener') {
+                imageKey = 'evidence_letterOpener';
+            } else if (weaponId === 'fireplace_poker') {
+                imageKey = 'evidence_firePoker';
+            } else if (weaponId === 'poison_vial') {
+                imageKey = 'evidence_poisonVial';
+            }
+            
+            const weaponImage = getImagePath(imageKey);
+            if (weaponImage) {
+                modalContent = `
+                    <img src="${weaponImage}" alt="${result.foundWeapon.name}" class="examination-image" />
+                    <div class="examination-text"><strong>Found: ${result.foundWeapon.name}</strong></div>
+                    <div class="examination-text">${result.foundWeapon.description}</div>
+                    ${result.description && result.description !== result.foundWeapon.description ? `<div class="examination-text" style="margin-top: 1rem;">${result.description}</div>` : ''}
+                `;
+            } else {
+                // Fallback if image not found
+                modalContent = `
+                    <div class="examination-text"><strong>Found: ${result.foundWeapon.name}</strong></div>
+                    <div class="examination-text">${result.foundWeapon.description}</div>
+                    ${result.description && result.description !== result.foundWeapon.description ? `<div class="examination-text" style="margin-top: 1rem;">${result.description}</div>` : ''}
+                `;
+            }
+        }
+        // Check if this is the body - show autopsy image
+        else if (result.name === 'Charles Blackthorn\'s Body' || result.name?.toLowerCase().includes('body')) {
+            const autopsyImage = getImagePath('evidence_body');
+            if (autopsyImage) {
+                modalContent = `
+                    <img src="${autopsyImage}" alt="Autopsy Report" class="examination-image" />
+                    <div class="examination-text">${result.description}</div>
+                `;
+            }
+        }
+        // Check if this is the portrait object - show image
+        else if (result.name === 'Family Portrait' || result.name?.toLowerCase().includes('portrait')) {
             const portraitImage = getImagePath('object_portrait');
             if (portraitImage) {
                 modalContent = `
