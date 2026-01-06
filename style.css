@@ -347,23 +347,27 @@ body {
 /* Main Content */
 #game-content {
     grid-column: 1;
+    grid-row: 3;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
     min-height: 0;
     overflow: hidden;
+    max-height: calc(100vh - 300px);
 }
 
 #scene-display {
     background-color: var(--bg-darker);
-    padding: 2rem;
+    padding: 1.5rem;
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
-    min-height: 300px;
-    font-size: 1.1rem;
-    line-height: 1.8;
+    min-height: 0;
+    font-size: 1rem;
+    line-height: 1.6;
     overflow-y: auto;
-    flex: 1 1 auto;
+    overflow-x: hidden;
+    flex: 1 1 0;
+    max-height: 50vh;
 }
 
 #scene-display h2 {
@@ -382,12 +386,95 @@ body {
     font-style: italic;
     color: var(--text-muted);
     margin-bottom: 1.5rem;
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+/* Images - Responsive and fit to container */
+.room-image,
+.ending-image {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 30vh;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 1rem auto;
+    border-radius: 2px;
+}
+
+.character-portrait-modal {
+    width: 100%;
+    max-width: 250px;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 1.5rem auto;
+    border-radius: 2px;
+    border: 1px solid var(--border-subtle);
+}
+
+.examination-image {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    max-height: 50vh;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 1.5rem auto;
+    border-radius: 2px;
+    border: 1px solid var(--border-subtle);
+}
+
+.examination-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-soft);
+    text-align: center;
+}
+
+.dialogue-speaker {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-soft);
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.dialogue-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-soft);
+    text-align: center;
+    font-style: italic;
+}
+
+.character-portrait {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    max-height: 250px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 1rem auto;
+    border-radius: 2px;
+    border: 1px solid var(--border-subtle);
+}
+
+#profiles-content .character-portrait {
+    max-width: 120px;
+    max-height: 150px;
+    margin-bottom: 0.75rem;
 }
 
 #choices-container {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    flex: 0 0 auto;
+    max-height: 40vh;
+    overflow-y: auto;
 }
 
 .choice-button {
@@ -580,6 +667,16 @@ body {
     line-height: 1.8;
     margin-bottom: 1.5rem;
     color: var(--text-soft);
+    text-align: center;
+}
+
+#modal-text .character-portrait-modal {
+    margin-bottom: 1.5rem;
+}
+
+#modal-text .dialogue-speaker {
+    margin-top: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 #modal-actions {
@@ -633,14 +730,45 @@ body {
         min-height: 0;
     }
     
+    #game-content {
+        max-height: calc(100vh - 200px);
+        gap: 0.5rem;
+    }
+    
     #scene-display {
-        padding: 1rem;
-        font-size: 0.95rem;
-        line-height: 1.6;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
         overflow-y: auto;
-        flex: 1 1 auto;
+        flex: 1 1 0;
         min-height: 0;
-        max-height: 40vh;
+        max-height: 45vh;
+    }
+    
+    .room-image,
+    .ending-image {
+        max-height: 20vh;
+        margin-bottom: 0.75rem;
+    }
+    
+    .character-portrait {
+        max-width: 150px;
+        max-height: 180px;
+    }
+    
+    .character-portrait-modal {
+        max-width: 200px;
+        max-height: 250px;
+    }
+    
+    #profiles-content .character-portrait {
+        max-width: 100px;
+        max-height: 120px;
+    }
+    
+    #choices-container {
+        max-height: 35vh;
+        gap: 0.5rem;
     }
     
     #choices-container {

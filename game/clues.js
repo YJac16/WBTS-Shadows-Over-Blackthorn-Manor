@@ -194,11 +194,49 @@ export function getActiveClues() {
 }
 
 /**
- * Get clue by ID for active solution
+ * Get clue by ID for active scenario
  * @param {string} clueId - Clue ID
  * @returns {object|null} Clue data or null
  */
 export function getClueById(clueId) {
+    // Handle body_examination clue with scenario-based cause of death
+    if (clueId === 'body_examination') {
+        if (!gameState.activeScenario) {
+            return null;
+        }
+        
+        const scenario = gameState.activeScenario;
+        let methodText = '';
+        
+        // Map cause of death to descriptive text
+        switch (scenario.causeOfDeath) {
+            case 'poison':
+                methodText = 'internal poisoning. No external wounds visible.';
+                break;
+            case 'lacerations':
+                methodText = 'sharp-force trauma. Multiple lacerations suggest a stabbing.';
+                break;
+            case 'blunt_force':
+                methodText = 'blunt-force trauma. Severe trauma to the skull.';
+                break;
+            case 'precision_incision':
+                methodText = 'a precise surgical incision. The wound shows medical precision.';
+                break;
+            default:
+                methodText = 'violence.';
+        }
+        
+        return {
+            id: 'body_examination',
+            title: 'Cause of Death',
+            text: `Charles Blackthorn's body shows signs of ${methodText}`,
+            supports: [],
+            contradicts: [],
+            requiredForSolution: true
+        };
+    }
+    
+    // For other clues, use the active clues system
     const activeClues = getActiveClues();
     return activeClues[clueId] || null;
 }

@@ -5,10 +5,10 @@
  * Handles scene rendering, choices, journal, character profiles, and endings.
  */
 
-import { gameState } from './state.js';
+import { gameState, isWeaponConsistentWithAutopsy } from './state.js';
 import { getEnding, suspects } from './scenes.js';
 import { getCluesSupporting, getCluesContradicting } from './clues.js';
-import { getAudioEnabled, setAudioEnabled } from './media.js';
+import { getAudioEnabled, setAudioEnabled, getImagePath } from './media.js';
 
 // UI State
 let currentPanel = null;
@@ -116,15 +116,34 @@ export function updateStats() {
  */
 export function renderScene(sceneData) {
     const sceneDisplay = document.getElementById('scene-display');
-    if (!sceneDisplay || !sceneData) {
+    if (!sceneDisplay) {
         return;
     }
     
-    const location = sceneData.location;
+    if (!sceneData) {
+        // Fallback to ensure text always appears
+        const roomImage = getImagePath('room_grandHall');
+        sceneDisplay.innerHTML = `
+            ${roomImage ? `<img src="${roomImage}" alt="Grand Hall" class="room-image" />` : ''}
+            <div class="location">Grand Hall</div>
+            <p>You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.</p>
+        `;
+        return;
+    }
     
+    // Handle both old and new scene data formats
+    const locationName = sceneData.name || (sceneData.location ? sceneData.location.name : 'Grand Hall');
+    const description = sceneData.description || 'You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.';
+    
+    // Get room image
+    const roomId = gameState.currentLocation || 'grandHall';
+    const roomImage = getImagePath(`room_${roomId}`);
+    
+    // Ensure content is always set
     sceneDisplay.innerHTML = `
-        <div class="location">${location.name}</div>
-        <p>${sceneData.description}</p>
+        ${roomImage ? `<img src="${roomImage}" alt="${locationName}" class="room-image" />` : ''}
+        <div class="location">${locationName}</div>
+        <p>${description}</p>
     `;
 }
 
@@ -183,7 +202,8 @@ function updateNavCharacters() {
     navCharacters.innerHTML = '';
     
     Object.values(suspects).forEach(suspect => {
-        const profile = gameState.characterProfiles[suspect.id];
+        // Validation: Profiles must be hidden until interaction
+        const profile = gameState.knownCharacters[suspect.id];
         if (!profile || !profile.unlocked) {
             return; // Only show characters after speaking with them
         }
@@ -340,7 +360,8 @@ function updateProfilesSidebar() {
     let hasUnlockedProfiles = false;
     
     Object.values(suspects).forEach(suspect => {
-        const profile = gameState.characterProfiles[suspect.id];
+        // Validation: Profiles must be hidden until interaction
+        const profile = gameState.knownCharacters[suspect.id];
         if (!profile || !profile.unlocked) {
             return; // Don't show locked profiles
         }
@@ -354,8 +375,28 @@ function updateProfilesSidebar() {
         const supportingClues = getCluesSupporting(suspect.id);
         const contradictingClues = getCluesContradicting(suspect.id);
         
+        // Get character portrait - Eleanor has emotional states
+        let portraitImage = null;
+        if (suspect.id === 'eleanor') {
+            // Determine Eleanor's emotional state based on discovered clues
+            const hasMotive = profile.motives && profile.motives.length > 0;
+            const hasPoisonEvidence = gameState.foundWeapons.includes('poison_vial') || 
+                                     (gameState.discoveredClues.has('autopsy') && gameState.causeOfDeath === 'poison');
+            
+            if (hasPoisonEvidence) {
+                portraitImage = getImagePath('portrait_eleanor_shaken');
+            } else if (hasMotive) {
+                portraitImage = getImagePath('portrait_eleanor_defensive');
+            } else {
+                portraitImage = getImagePath('portrait_eleanor_calm');
+            }
+        } else {
+            portraitImage = getImagePath(`portrait_${suspect.id}`);
+        }
+        
         let profileHTML = `
             <div class="profile-header">
+                ${portraitImage ? `<img src="${portraitImage}" alt="${suspect.name}" class="character-portrait" />` : ''}
                 <h3>${suspect.name}</h3>
                 <div class="profile-title">${suspect.title}</div>
                 <div class="profile-role">${suspect.role}</div>
@@ -363,7 +404,7 @@ function updateProfilesSidebar() {
             <div class="profile-description">${suspect.description}</div>
         `;
         
-        if (profile.facts.length > 0) {
+        if (profile.facts && profile.facts.length > 0) {
             profileHTML += '<div class="profile-section"><h4>Known Facts</h4><ul>';
             profile.facts.forEach(fact => {
                 profileHTML += `<li>${fact}</li>`;
@@ -371,7 +412,23 @@ function updateProfilesSidebar() {
             profileHTML += '</ul></div>';
         }
         
-        if (profile.suspicious.length > 0) {
+        if (profile.motives && profile.motives.length > 0) {
+            profileHTML += '<div class="profile-section"><h4>Motive</h4><ul>';
+            profile.motives.forEach(motive => {
+                profileHTML += `<li>${motive}</li>`;
+            });
+            profileHTML += '</ul></div>';
+        }
+        
+        if (profile.opportunities && profile.opportunities.length > 0) {
+            profileHTML += '<div class="profile-section"><h4>Opportunity</h4><ul>';
+            profile.opportunities.forEach(opp => {
+                profileHTML += `<li>${opp}</li>`;
+            });
+            profileHTML += '</ul></div>';
+        }
+        
+        if (profile.suspicious && profile.suspicious.length > 0) {
             profileHTML += '<div class="profile-section suspicious"><h4>Suspicious Behavior</h4><ul>';
             profile.suspicious.forEach(behavior => {
                 profileHTML += `<li>${behavior}</li>`;
@@ -410,7 +467,8 @@ function renderProfilesPanel(container, suspectId = null) {
         : Object.values(suspects);
     
     suspectsToShow.forEach(suspect => {
-        const profile = gameState.characterProfiles[suspect.id];
+        // Validation: Profiles must be hidden until interaction
+        const profile = gameState.knownCharacters[suspect.id];
         if (!profile || !profile.unlocked) {
             return; // Don't show locked profiles
         }
@@ -422,8 +480,28 @@ function renderProfilesPanel(container, suspectId = null) {
         const supportingClues = getCluesSupporting(suspect.id);
         const contradictingClues = getCluesContradicting(suspect.id);
         
+        // Get character portrait - Eleanor has emotional states
+        let portraitImage = null;
+        if (suspect.id === 'eleanor') {
+            // Determine Eleanor's emotional state based on discovered clues
+            const hasMotive = profile.motives && profile.motives.length > 0;
+            const hasPoisonEvidence = gameState.foundWeapons.includes('poison_vial') || 
+                                     (gameState.discoveredClues.has('autopsy') && gameState.causeOfDeath === 'poison');
+            
+            if (hasPoisonEvidence) {
+                portraitImage = getImagePath('portrait_eleanor_shaken');
+            } else if (hasMotive) {
+                portraitImage = getImagePath('portrait_eleanor_defensive');
+            } else {
+                portraitImage = getImagePath('portrait_eleanor_calm');
+            }
+        } else {
+            portraitImage = getImagePath(`portrait_${suspect.id}`);
+        }
+        
         let profileHTML = `
             <div class="profile-header">
+                ${portraitImage ? `<img src="${portraitImage}" alt="${suspect.name}" class="character-portrait" />` : ''}
                 <h3>${suspect.name}</h3>
                 <div class="profile-title">${suspect.title}</div>
                 <div class="profile-role">${suspect.role}</div>
@@ -431,7 +509,7 @@ function renderProfilesPanel(container, suspectId = null) {
             <div class="profile-description">${suspect.description}</div>
         `;
         
-        if (profile.facts.length > 0) {
+        if (profile.facts && profile.facts.length > 0) {
             profileHTML += '<div class="profile-section"><h4>Known Facts</h4><ul>';
             profile.facts.forEach(fact => {
                 profileHTML += `<li>${fact}</li>`;
@@ -439,7 +517,23 @@ function renderProfilesPanel(container, suspectId = null) {
             profileHTML += '</ul></div>';
         }
         
-        if (profile.suspicious.length > 0) {
+        if (profile.motives && profile.motives.length > 0) {
+            profileHTML += '<div class="profile-section"><h4>Motive</h4><ul>';
+            profile.motives.forEach(motive => {
+                profileHTML += `<li>${motive}</li>`;
+            });
+            profileHTML += '</ul></div>';
+        }
+        
+        if (profile.opportunities && profile.opportunities.length > 0) {
+            profileHTML += '<div class="profile-section"><h4>Opportunity</h4><ul>';
+            profile.opportunities.forEach(opp => {
+                profileHTML += `<li>${opp}</li>`;
+            });
+            profileHTML += '</ul></div>';
+        }
+        
+        if (profile.suspicious && profile.suspicious.length > 0) {
             profileHTML += '<div class="profile-section suspicious"><h4>Suspicious Behavior</h4><ul>';
             profile.suspicious.forEach(behavior => {
                 profileHTML += `<li>${behavior}</li>`;
@@ -505,7 +599,13 @@ export function showModal(text, actions = []) {
         return;
     }
     
-    modalText.textContent = text;
+    // Check if text is HTML (contains tags) or plain text
+    if (typeof text === 'string' && text.includes('<')) {
+        modalText.innerHTML = text;
+    } else {
+        modalText.textContent = text;
+    }
+    
     modalActions.innerHTML = '';
     
     actions.forEach(action => {
@@ -556,17 +656,32 @@ export function renderEnding(endingId) {
     const sceneDisplay = document.getElementById('scene-display');
     const choicesContainer = document.getElementById('choices-container');
     
+    // Get ending image
+    let endingImage = null;
+    if (endingId === 'true') {
+        endingImage = getImagePath('ending_success');
+    } else if (endingId === 'timeout' || endingId === 'false') {
+        endingImage = getImagePath('ending_failure');
+    }
+    
     if (sceneDisplay) {
         sceneDisplay.innerHTML = `
+            ${endingImage ? `<img src="${endingImage}" alt="${ending.title}" class="ending-image" />` : ''}
             <h2>${ending.title}</h2>
             <div style="white-space: pre-line; line-height: 1.8;">${ending.text}</div>
         `;
     }
     
     if (choicesContainer) {
-        choicesContainer.innerHTML = `
-            <button class="choice-button" onclick="location.reload()">Play Again</button>
-        `;
+        const playAgainButton = document.createElement('button');
+        playAgainButton.className = 'choice-button';
+        playAgainButton.textContent = 'Play Again';
+        playAgainButton.addEventListener('click', () => {
+            // Trigger play again event (main.js will handle reset)
+            window.dispatchEvent(new CustomEvent('playAgain'));
+        });
+        choicesContainer.innerHTML = '';
+        choicesContainer.appendChild(playAgainButton);
     }
     
     // Hide stats and journal in ending
@@ -632,7 +747,21 @@ export function renderAccusationInterface(accusationData, onAccuse) {
         accusationData.weapons.forEach(weapon => {
             const button = document.createElement('button');
             button.className = 'choice-button';
-            button.textContent = `${weapon.name} - ${weapon.description}`;
+            
+            // Check if weapon is consistent with autopsy (if autopsy is unlocked)
+            let weaponText = `${weapon.name} - ${weapon.description}`;
+            let isInconsistent = false;
+            
+            if (gameState.autopsyUnlocked) {
+                const consistent = isWeaponConsistentWithAutopsy(weapon.id);
+                if (!consistent) {
+                    weaponText += ' ⚠️ INCONSISTENT WITH AUTOPSY';
+                    isInconsistent = true;
+                    button.classList.add('danger');
+                }
+            }
+            
+            button.textContent = weaponText;
             button.dataset.weaponId = weapon.id;
             button.addEventListener('click', () => {
                 // Remove previous selection
@@ -641,6 +770,18 @@ export function renderAccusationInterface(accusationData, onAccuse) {
                 });
                 button.classList.add('selected');
                 gameState.accusation.weapon = weapon.id;
+                
+                // Show warning if inconsistent
+                if (isInconsistent) {
+                    const warning = document.createElement('p');
+                    warning.style.color = 'var(--danger-subtle)';
+                    warning.style.fontStyle = 'italic';
+                    warning.style.marginTop = '0.5rem';
+                    warning.textContent = 'Warning: This weapon does not match the autopsy report. Your accusation will fail.';
+                    weaponSection.appendChild(warning);
+                    setTimeout(() => warning.remove(), 5000);
+                }
+                
                 checkAccusationReady(onAccuse);
             });
             weaponSection.appendChild(button);
@@ -658,6 +799,17 @@ export function renderAccusationInterface(accusationData, onAccuse) {
     finalButton.style.marginTop = '1.5rem';
     finalButton.addEventListener('click', () => {
         if (gameState.accusation.suspect && gameState.accusation.weapon) {
+            // Show confirmation if weapon is inconsistent with autopsy
+            if (gameState.autopsyUnlocked && !isWeaponConsistentWithAutopsy(gameState.accusation.weapon)) {
+                const confirm = window.confirm(
+                    'WARNING: This weapon is inconsistent with the autopsy report. Your accusation will fail.\n\n' +
+                    'Are you sure you want to proceed?'
+                );
+                if (!confirm) {
+                    return;
+                }
+            }
+            
             onAccuse(gameState.accusation.suspect, gameState.accusation.weapon);
         }
     });
@@ -700,14 +852,26 @@ export function showExaminationResult(result) {
             { text: 'Understood', onClick: null }
         ]);
     } else {
-        showModal(result.description, [
+        // Check if this is the portrait object - show image
+        let modalContent = result.description;
+        if (result.name === 'Family Portrait' || result.name?.toLowerCase().includes('portrait')) {
+            const portraitImage = getImagePath('object_portrait');
+            if (portraitImage) {
+                modalContent = `
+                    <img src="${portraitImage}" alt="Family Portrait" class="examination-image" />
+                    <div class="examination-text">${result.description}</div>
+                `;
+            }
+        }
+        
+        showModal(modalContent, [
             { text: 'Continue', onClick: null }
         ]);
     }
 }
 
 /**
- * Show interrogation result
+ * Show interrogation result with character image
  * @param {object} result - Result from interrogateSuspect()
  */
 export function showInterrogationResult(result) {
@@ -717,11 +881,57 @@ export function showInterrogationResult(result) {
     
     const suspect = result.suspect;
     const dialogue = result.dialogue;
+    const suspectId = suspect?.id;
     
-    showModal(
-        `${suspect.name}\n\n"${dialogue.text}"`,
-        [
-            { text: 'Continue', onClick: null }
-        ]
-    );
+    // Get character portrait - Eleanor has emotional states
+    let portraitImage = null;
+    if (suspectId === 'eleanor') {
+        // Determine Eleanor's emotional state based on discovered clues
+        const profile = gameState.knownCharacters[suspectId];
+        const hasMotive = profile?.motives && profile.motives.length > 0;
+        const hasPoisonEvidence = gameState.foundWeapons.includes('poison_vial') || 
+                                 (gameState.discoveredClues.has('autopsy') && gameState.causeOfDeath === 'poison');
+        
+        if (hasPoisonEvidence) {
+            portraitImage = getImagePath('portrait_eleanor_shaken');
+        } else if (hasMotive) {
+            portraitImage = getImagePath('portrait_eleanor_defensive');
+        } else {
+            portraitImage = getImagePath('portrait_eleanor_calm');
+        }
+    } else if (suspectId) {
+        portraitImage = getImagePath(`portrait_${suspectId}`);
+    }
+    
+    // Create modal content with character image
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalContent = document.getElementById('modal-content');
+    const modalText = document.getElementById('modal-text');
+    const modalActions = document.getElementById('modal-actions');
+    
+    if (modalOverlay && modalContent && modalText && modalActions) {
+        // Set text with image
+        modalText.innerHTML = `
+            ${portraitImage ? `<img src="${portraitImage}" alt="${suspect.name}" class="character-portrait-modal" />` : ''}
+            <div class="dialogue-speaker">${suspect.name}</div>
+            <div class="dialogue-text">"${dialogue.text}"</div>
+        `;
+        
+        modalActions.innerHTML = '';
+        const continueButton = document.createElement('button');
+        continueButton.className = 'choice-button';
+        continueButton.textContent = 'Continue';
+        continueButton.addEventListener('click', hideModal);
+        modalActions.appendChild(continueButton);
+        
+        modalOverlay.classList.remove('hidden');
+    } else {
+        // Fallback to simple modal
+        showModal(
+            `${suspect.name}\n\n"${dialogue.text}"`,
+            [
+                { text: 'Continue', onClick: null }
+            ]
+        );
+    }
 }

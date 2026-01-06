@@ -16,6 +16,7 @@
 import { gameState, resetGameState } from './game/state.js';
 import { getCurrentScene, getAvailableActions, navigateToLocation, examineObject, interrogateSuspect, getAccusationData, processAccusation } from './game/logic.js';
 import { initUI, updateStats, renderScene, renderChoices, updateJournal, renderEnding, renderAccusationInterface, showExaminationResult, showInterrogationResult } from './game/ui.js';
+import { rooms } from './game/scenes.js';
 
 /**
  * Initialize the game
@@ -29,6 +30,12 @@ function initGame() {
  * Update all UI elements
  */
 function updateUI() {
+    // Only show loading if scenario is truly not initialized (shouldn't happen after resetGameState)
+    if (!gameState.activeScenario) {
+        showLoadingState();
+        return;
+    }
+    
     updateStats();
     updateJournal();
     
@@ -45,15 +52,69 @@ function updateUI() {
         return;
     }
     
-    // Render current scene
+    // Render current scene - room rendering does NOT depend on scenario data
     const sceneData = getCurrentScene();
-    if (sceneData) {
+    
+    if (sceneData && sceneData.name && sceneData.description) {
         renderScene(sceneData);
+    } else {
+        // Fallback: render default intro scene to ensure text always appears
+        const sceneDisplay = document.getElementById('scene-display');
+        if (sceneDisplay) {
+            sceneDisplay.innerHTML = `
+                <div class="location">Grand Hall</div>
+                <p>You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.</p>
+            `;
+        }
     }
     
-    // Render available actions
+    // Render available actions - preserve original navigation buttons
     const actions = getAvailableActions();
-    renderChoices(actions, handleAction);
+    if (actions && actions.length > 0) {
+        renderChoices(actions, handleAction);
+    } else {
+        // Fallback: show default actions if getAvailableActions fails
+        const choicesContainer = document.getElementById('choices-container');
+        if (choicesContainer && choicesContainer.children.length === 0) {
+            // Use the actual room data if available
+            const currentRoom = rooms[gameState.currentLocation] || rooms['grandHall'];
+            if (currentRoom && currentRoom.actions) {
+                choicesContainer.innerHTML = '';
+                currentRoom.actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.className = 'choice-button';
+                    button.textContent = action.text;
+                    if (action.location) {
+                        button.addEventListener('click', () => handleAction({ type: 'navigate', target: action.location }));
+                    } else if (action.object) {
+                        button.addEventListener('click', () => handleAction({ type: 'examine', target: action.object }));
+                    } else if (action.suspect) {
+                        button.addEventListener('click', () => handleAction({ type: 'interrogate', target: action.suspect }));
+                    }
+                    choicesContainer.appendChild(button);
+                });
+            }
+        }
+    }
+}
+
+/**
+ * Show loading state while scenario initializes
+ */
+function showLoadingState() {
+    const sceneDisplay = document.getElementById('scene-display');
+    const choicesContainer = document.getElementById('choices-container');
+    
+    if (sceneDisplay) {
+        sceneDisplay.innerHTML = `
+            <h2>Initializing Investigation...</h2>
+            <p style="color: var(--text-muted);">Preparing the scene...</p>
+        `;
+    }
+    
+    if (choicesContainer) {
+        choicesContainer.innerHTML = '<p style="color: var(--text-muted);">Loading...</p>';
+    }
 }
 
 /**
@@ -142,15 +203,91 @@ window.addEventListener('gameStateChanged', () => {
     updateUI();
 });
 
+// Listen for play again event
+window.addEventListener('playAgain', () => {
+    initGame(); // This calls resetGameState() and updateUI()
+});
+
 // Initialize game when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+function startGame() {
+    // Ensure DOM elements exist before initializing
+    const sceneDisplay = document.getElementById('scene-display');
+    const choicesContainer = document.getElementById('choices-container');
+    
+    if (!sceneDisplay || !choicesContainer) {
+        // Retry after a short delay if DOM not ready
+        setTimeout(startGame, 100);
+        return;
+    }
+    
+    try {
         initUI();
         initGame();
+        
+        // Safety check: ensure content rendered after initialization
+        setTimeout(() => {
+            if (!sceneDisplay.innerHTML || sceneDisplay.innerHTML.trim() === '') {
+                sceneDisplay.innerHTML = `
+                    <div class="location">Grand Hall</div>
+                    <p>You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.</p>
+                `;
+            }
+            if (!choicesContainer.innerHTML || choicesContainer.innerHTML.trim() === '') {
+                const currentRoom = rooms[gameState.currentLocation] || rooms['grandHall'];
+                if (currentRoom && currentRoom.actions) {
+                    choicesContainer.innerHTML = '';
+                    currentRoom.actions.forEach(action => {
+                        const button = document.createElement('button');
+                        button.className = 'choice-button';
+                        button.textContent = action.text;
+                        if (action.location) {
+                            button.addEventListener('click', () => handleAction({ type: 'navigate', target: action.location }));
+                        } else if (action.object) {
+                            button.addEventListener('click', () => handleAction({ type: 'examine', target: action.object }));
+                        } else if (action.suspect) {
+                            button.addEventListener('click', () => handleAction({ type: 'interrogate', target: action.suspect }));
+                        }
+                        choicesContainer.appendChild(button);
+                    });
+                }
+            }
+        }, 50);
+    } catch (error) {
+        // Render fallback content on error to ensure text always appears
+        if (sceneDisplay) {
+            sceneDisplay.innerHTML = `
+                <div class="location">Grand Hall</div>
+                <p>You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.</p>
+            `;
+        }
+        if (choicesContainer) {
+            const fallbackRoom = rooms['grandHall'];
+            if (fallbackRoom && fallbackRoom.actions) {
+                choicesContainer.innerHTML = '';
+                fallbackRoom.actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.className = 'choice-button';
+                    button.textContent = action.text;
+                    if (action.location) {
+                        button.addEventListener('click', () => handleAction({ type: 'navigate', target: action.location }));
+                    } else if (action.object) {
+                        button.addEventListener('click', () => handleAction({ type: 'examine', target: action.object }));
+                    } else if (action.suspect) {
+                        button.addEventListener('click', () => handleAction({ type: 'interrogate', target: action.suspect }));
+                    }
+                    choicesContainer.appendChild(button);
+                });
+            }
+        }
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        startGame();
     });
 } else {
-    initUI();
-    initGame();
+    startGame();
 }
 
 // Export for potential external use

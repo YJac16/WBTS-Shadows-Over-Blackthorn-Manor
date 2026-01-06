@@ -9,10 +9,12 @@
  * - Accusation handling
  */
 
-import { gameState, consumeTime, increaseSuspicion, addClue, canAccuse, makeAccusation, updateCharacterProfile } from './state.js';
+import { gameState, consumeTime, increaseSuspicion, addClue, canAccuse, makeAccusation, updateCharacterProfile, unlockAutopsy, isWeaponConsistentWithAutopsy } from './state.js';
 import { rooms, getObject, getSuspect, getWeapons, getAllWeapons, suspects } from './scenes.js';
 import { getClueById } from './clues.js';
-import { getBestDialogue } from './dialogue.js';
+import { getBestDialogue, updateProfileFromDialogue } from './dialogue.js';
+import { isWeaponInRoom, isWeaponInObject, getWeapon } from './weapons.js';
+import { isWeaponValidForScenario } from './validation.js';
 
 /**
  * Navigate to a new location
@@ -24,7 +26,7 @@ export function navigateToLocation(locationId) {
         return false;
     }
     
-    if (!consumeTime()) {
+    if (!consumeTime(1, 'navigate')) {
         return false; // Time ran out
     }
     
@@ -47,7 +49,7 @@ export function examineObject(objectId) {
     }
     
     // Check if object has prerequisite clue
-    if (obj.requiredClue && !gameState.collectedClues.has(obj.requiredClue)) {
+    if (obj.requiredClue && !gameState.discoveredClues.has(obj.requiredClue)) {
         return {
             error: 'You need to examine something else first.',
             description: 'Something about this object seems important, but you\'re missing a piece of the puzzle.'
@@ -55,30 +57,67 @@ export function examineObject(objectId) {
     }
     
     // Only consume time if we can actually examine it
-    if (!consumeTime()) {
+    if (!consumeTime(1, 'examine')) {
         return null; // Time ran out
     }
     
     // Increase suspicion when examining objects (investigating raises suspicion)
-    increaseSuspicion(5);
+    increaseSuspicion(5, 'examine_object');
     
     gameState.examinedObjects.add(objectId);
+    
+    // Check if examining the body (unlocks autopsy)
+    if (objectId === 'body' && !gameState.autopsyUnlocked && gameState.activeScenario) {
+        unlockAutopsy(); // Uses scenario's autopsyText
+        increaseSuspicion(10, 'examine_body'); // Examining body raises suspicion significantly
+    }
+    
+    // Check if a weapon is found by examining this object (e.g., letter opener behind portrait)
+    const allWeapons = getAllWeapons();
+    for (const weapon of allWeapons) {
+        if (isWeaponInObject(weapon.id, objectId, gameState.weaponLocations)) {
+            if (!gameState.foundWeapons.includes(weapon.id)) {
+                gameState.foundWeapons.push(weapon.id);
+                
+                // Check if weapon is consistent with autopsy
+                let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
+                if (gameState.autopsyUnlocked) {
+                    const isValid = isWeaponValidForScenario(weapon.id, gameState.activeScenario);
+                    if (!isValid) {
+                        weaponText += ' NOTE: This weapon is INCONSISTENT with the autopsy report.';
+                    }
+                }
+                
+                addClue(`weapon_${weapon.id}`, `Weapon Found: ${weapon.name}`, weaponText);
+            }
+        }
+    }
+    
+    // Check if a weapon is in this room (for room-based weapons)
+    const currentRoom = gameState.currentLocation;
+    for (const weapon of allWeapons) {
+        if (isWeaponInRoom(weapon.id, currentRoom, gameState.weaponLocations)) {
+            if (!gameState.foundWeapons.includes(weapon.id)) {
+                gameState.foundWeapons.push(weapon.id);
+                
+                // Check if weapon is consistent with autopsy
+                let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
+                if (gameState.autopsyUnlocked) {
+                    const isValid = isWeaponValidForScenario(weapon.id, gameState.activeScenario);
+                    if (!isValid) {
+                        weaponText += ' NOTE: This weapon is INCONSISTENT with the autopsy report.';
+                    }
+                }
+                
+                addClue(`weapon_${weapon.id}`, `Weapon Found: ${weapon.name}`, weaponText);
+            }
+        }
+    }
     
     // Add clue if object has one (from dynamic clue system)
     if (obj.clue) {
         addClue(obj.clue.id, obj.clue.title, obj.clue.text);
         // Don't update character profiles here - only update when speaking with suspects
-        
-        // Discover weapons based on clues found (only specific evidence clues)
-        if (obj.clue.id === 'letter_opener_missing') {
-            gameState.discoveredWeapons.add('letterOpener');
-        } else if (obj.clue.id === 'fire_poker_evidence') {
-            gameState.discoveredWeapons.add('firePoker');
-        } else if (obj.clue.id === 'syringe_evidence') {
-            gameState.discoveredWeapons.add('syringe');
-        }
-        // Note: body_examination describes the method but doesn't discover the weapon
-        // Players must find specific evidence to discover weapons
     }
     
     return {
@@ -100,15 +139,15 @@ export function interrogateSuspect(suspectId) {
         return null;
     }
     
-    if (!consumeTime()) {
+    if (!consumeTime(1, 'interrogate')) {
         return null; // Time ran out
     }
     
     gameState.interrogatedSuspects.add(suspectId);
     
-    // Unlock character profile
-    if (!gameState.characterProfiles[suspectId].unlocked) {
-        gameState.characterProfiles[suspectId].unlocked = true;
+    // Unlock character profile (validation: profiles hidden until interaction)
+    if (!gameState.knownCharacters[suspectId].unlocked) {
+        gameState.knownCharacters[suspectId].unlocked = true;
     }
     
     // Get dialogue from dynamic system
@@ -123,10 +162,13 @@ export function interrogateSuspect(suspectId) {
     
     // Increase suspicion based on dialogue
     if (dialogue.suspicionIncrease) {
-        increaseSuspicion(dialogue.suspicionIncrease);
+        increaseSuspicion(dialogue.suspicionIncrease, `interrogate_${suspectId}`);
     }
     
-    // Update character profile
+    // Update character profile from dialogue (adds motive/opportunity)
+    updateProfileFromDialogue(suspectId, dialogue);
+    
+    // Update character profile with dialogue text
     updateCharacterProfile(suspectId, dialogue.text, dialogue.suspicionIncrease > 10);
     
     return {
@@ -140,9 +182,20 @@ export function interrogateSuspect(suspectId) {
  * @returns {array} - Array of available actions
  */
 export function getAvailableActions() {
+    // Only check for loading state, don't block rendering
+    if (!gameState.activeScenario) {
+        return []; // Return empty during loading
+    }
+    
+    // Ensure current location is set
+    if (!gameState.currentLocation) {
+        gameState.currentLocation = 'grandHall';
+        gameState.visitedRooms.add('grandHall');
+    }
+    
     const location = rooms[gameState.currentLocation];
     if (!location) {
-        return [];
+        return []; // Return empty if room not found
     }
     
     const actions = [];
@@ -199,16 +252,45 @@ export function getAvailableActions() {
  * @returns {object} - Current scene information
  */
 export function getCurrentScene() {
+    // Ensure scenario is initialized (should always be true after resetGameState)
+    if (!gameState.activeScenario) {
+        // Return default scene to ensure text always renders
+        return {
+            name: 'Grand Hall',
+            description: 'You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.',
+            location: rooms['grandHall'] || null
+        };
+    }
+    
+    // Ensure current location is set (fallback to grandHall)
+    if (!gameState.currentLocation) {
+        gameState.currentLocation = 'grandHall';
+        gameState.visitedRooms.add('grandHall');
+    }
+    
     const location = rooms[gameState.currentLocation];
     if (!location) {
+        // Fallback to grandHall if room not found
+        gameState.currentLocation = 'grandHall';
+        const fallbackRoom = rooms['grandHall'];
+        if (fallbackRoom) {
+            return {
+                name: fallbackRoom.name,
+                location: fallbackRoom,
+                description: fallbackRoom.initialDescription || fallbackRoom.description,
+                isFirstVisit: true
+            };
+        }
         return null;
     }
     
     // Use initial description if first visit, otherwise use regular description
+    // Preserve original intro narrative text
     const isFirstVisit = !gameState.visitedRooms.has(location.id) || 
                          (gameState.visitedRooms.size === 1 && location.id === 'grandHall');
     
     return {
+        name: location.name,
         location: location,
         description: isFirstVisit && location.initialDescription 
             ? location.initialDescription 
@@ -222,11 +304,16 @@ export function getCurrentScene() {
  * @returns {object} - Available suspects and weapons for accusation
  */
 export function getAccusationData() {
-    // Only show weapons that have been discovered through evidence
+    // Guard: Only show weapons that player has found
     const allWeapons = getAllWeapons();
     const availableWeapons = allWeapons.filter(weapon => 
-        gameState.discoveredWeapons.has(weapon.id)
+        gameState.foundWeapons.includes(weapon.id)
     );
+    
+    // Validation: Ensure only discovered weapons are shown
+    if (availableWeapons.length === 0 && allWeapons.length > 0) {
+        console.warn('VALIDATION: No weapons discovered yet. Player cannot make accusation.');
+    }
     
     return {
         suspects: Object.values(suspects).map(s => ({
@@ -234,7 +321,7 @@ export function getAccusationData() {
             name: s.name,
             title: s.title
         })),
-        weapons: availableWeapons // Only show discovered weapons
+        weapons: availableWeapons // Only show found weapons
     };
 }
 

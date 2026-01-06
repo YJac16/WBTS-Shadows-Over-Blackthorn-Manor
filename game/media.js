@@ -9,30 +9,47 @@
 
 /**
  * Image registry
- * Maps image IDs to paths
+ * Maps image IDs to paths in public folder
  */
 export const IMAGE_REGISTRY = {
     // Room images
-    'room_grandHall': '/assets/images/rooms/grand-hall.jpg',
-    'room_study': '/assets/images/rooms/study.jpg',
-    'room_kitchen': '/assets/images/rooms/kitchen.jpg',
-    'room_servants': '/assets/images/rooms/servants.jpg',
-    'room_corridor': '/assets/images/rooms/corridor.jpg',
-    'room_eleanorRoom': '/assets/images/rooms/eleanor-room.jpg',
-    'room_marcusRoom': '/assets/images/rooms/marcus-room.jpg',
-    'room_gardenShed': '/assets/images/rooms/garden-shed.jpg',
+    'room_grandHall': '/Grand Hall (Opening Scene).jpg',
+    'room_study': '/The Study (Crime Scene).jpg',
+    'room_kitchen': '/Kitchen (Poison Narrative Friendly).jpg',
+    'room_servants': '/servants quarters.jpg',
+    'room_corridor': '/upstairs corridor.jpg',
+    'room_eleanorRoom': '/Eleanors_room.jpg',
+    'room_marcusRoom': '/victors room.jpg',
+    'room_garden': '/Garden_Tool Shed (Blunt Force Narrative).jpg',
+    'room_gardenShed': '/Garden_Tool Shed (Blunt Force Narrative).jpg',
+    'room_medicalRoom': '/Medical Room (Doctor Narrative).jpg',
     
-    // Character portraits
-    'portrait_eleanor': '/assets/images/characters/eleanor.jpg',
-    'portrait_marcus': '/assets/images/characters/marcus.jpg',
-    'portrait_lydia': '/assets/images/characters/lydia.jpg',
-    'portrait_hale': '/assets/images/characters/hale.jpg',
+    // Character portraits - Eleanor with emotional states
+    'portrait_eleanor': '/Eleanor Blackthorn (The Wife).jpg',
+    'portrait_eleanor_calm': '/Eleanor Blackthorn (The Wife) Calm but guarded.jpg',
+    'portrait_eleanor_defensive': '/Eleanor Blackthorn (The Wife) cold and defensive.jpg',
+    'portrait_eleanor_shaken': '/Eleanor Blackthorn (The Wife) emotionally shaken.jpg',
     
-    // Evidence
-    'evidence_letterOpener': '/assets/images/evidence/letter-opener.jpg',
-    'evidence_firePoker': '/assets/images/evidence/fire-poker.jpg',
-    'evidence_syringe': '/assets/images/evidence/syringe.jpg',
-    'evidence_body': '/assets/images/evidence/body.jpg'
+    // Character portraits - Other characters
+    'portrait_victor': '/Victor Hale (Business Associate).jpg',
+    'portrait_thomas': '/Thomas Reed (Gardener  Cleaner).jpg',
+    'portrait_doctor': '/Dr. Adrian Whitlock (Doctor).jpg',
+    'portrait_lydia': '/Lydia Crane.jpg',
+    
+    // Evidence/Weapons
+    'evidence_letterOpener': '/letter_opener.jpg',
+    'evidence_firePoker': '/fireplace_poker.jpg',
+    'evidence_poisonVial': '/poison_vial.jpg',
+    'evidence_scalpel': '/scalpel.jpg',
+    'evidence_syringe': '/scalpel.jpg', // Using scalpel as fallback (syringe not in public)
+    'evidence_body': '/autopsy.jpg',
+    'evidence_portrait': '/family portrait.jpg',
+    'object_portrait': '/family portrait.jpg',
+    
+    // Endings
+    'ending_success': '/successful_accusation.jpg',
+    'ending_failure': '/failure_time_ran_out.jpg',
+    'ending_timeout': '/failure_time_ran_out.jpg'
 };
 
 /**

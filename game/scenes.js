@@ -12,9 +12,9 @@
  */
 
 import { gameState } from './state.js';
-import { getActiveClues, getClueById } from './clues.js';
+import { getClueById } from './clues.js';
 import { getBestDialogue } from './dialogue.js';
-import { getWeaponsForSolution } from './solutions.js';
+import { getAllWeapons as getAllWeaponsFromModule } from './weapons.js';
 
 export const rooms = {
     grandHall: {
@@ -26,6 +26,7 @@ export const rooms = {
             { id: 'go_study', text: 'Go to the Study', location: 'study', timeCost: 1 },
             { id: 'go_kitchen', text: 'Go to the Kitchen', location: 'kitchen', timeCost: 1 },
             { id: 'go_corridor', text: 'Go to the Upstairs Corridor', location: 'corridor', timeCost: 1 },
+            { id: 'go_garden', text: 'Go to the Garden', location: 'garden', timeCost: 1 },
             { id: 'examine_portrait', text: 'Examine the family portrait', object: 'portrait', timeCost: 1 }
         ]
     },
@@ -33,6 +34,7 @@ export const rooms = {
     study: {
         id: 'study',
         name: 'Study',
+        initialDescription: 'You stand in the study of Blackthorn Manor. Charles Blackthorn lies dead at his desk. The storm rages outside, and you know there is no escape until morning. Someone in this house is the killer. The investigation begins here.',
         description: 'The crime scene. Charles Blackthorn\'s body lies slumped over his desk. Books line the walls, and a fire has burned low in the hearth. The room smells of old paper and something else...',
         actions: [
             { id: 'go_hall', text: 'Return to Grand Hall', location: 'grandHall', timeCost: 1 },
@@ -63,7 +65,8 @@ export const rooms = {
         actions: [
             { id: 'go_kitchen', text: 'Return to Kitchen', location: 'kitchen', timeCost: 1 },
             { id: 'examine_chest', text: 'Examine the chest of drawers', object: 'chest', timeCost: 1 },
-            { id: 'examine_window', text: 'Look out the window', object: 'window', timeCost: 1 }
+            { id: 'examine_window', text: 'Look out the window', object: 'window', timeCost: 1 },
+            { id: 'talk_lydia', text: 'Talk to Lydia Crane', suspect: 'lydia', timeCost: 1 }
         ]
     },
     
@@ -74,10 +77,11 @@ export const rooms = {
         actions: [
             { id: 'go_hall', text: 'Return to Grand Hall', location: 'grandHall', timeCost: 1 },
             { id: 'go_eleanor_room', text: 'Go to Eleanor\'s Room', location: 'eleanorRoom', timeCost: 1 },
-            { id: 'go_marcus_room', text: 'Go to Marcus\'s Room', location: 'marcusRoom', timeCost: 1 },
+            { id: 'go_marcus_room', text: 'Go to Victor\'s Room', location: 'marcusRoom', timeCost: 1 },
+            { id: 'go_medical_room', text: 'Go to Medical Room', location: 'medicalRoom', timeCost: 1 },
             { id: 'talk_eleanor', text: 'Talk to Eleanor Blackthorn', suspect: 'eleanor', timeCost: 1 },
-            { id: 'talk_marcus', text: 'Talk to Marcus Vale', suspect: 'marcus', timeCost: 1 },
-            { id: 'talk_hale', text: 'Talk to Dr. Thomas Hale', suspect: 'hale', timeCost: 1 }
+            { id: 'talk_victor', text: 'Talk to Victor Hale', suspect: 'victor', timeCost: 1 },
+            { id: 'talk_doctor', text: 'Talk to Dr. Adrian Whitlock', suspect: 'doctor', timeCost: 1 }
         ]
     },
     
@@ -94,7 +98,7 @@ export const rooms = {
     
     marcusRoom: {
         id: 'marcusRoom',
-        name: 'Marcus\'s Room',
+        name: 'Victor\'s Room',
         description: 'A guest room. Business papers are scattered on a desk. A briefcase sits open, revealing financial documents. Everything is neat, almost too neat.',
         actions: [
             { id: 'go_corridor', text: 'Return to Corridor', location: 'corridor', timeCost: 1 },
@@ -103,13 +107,36 @@ export const rooms = {
         ]
     },
     
+    garden: {
+        id: 'garden',
+        name: 'Garden',
+        description: 'The manor\'s garden stretches before you. Well-tended flower beds and hedges line the paths. A small shed stands at the far edge. The storm has left everything damp and dark.',
+        actions: [
+            { id: 'go_hall', text: 'Return to Grand Hall', location: 'grandHall', timeCost: 1 },
+            { id: 'go_gardenShed', text: 'Go to Garden Shed', location: 'gardenShed', timeCost: 1 },
+            { id: 'talk_thomas', text: 'Talk to Thomas Reed', suspect: 'thomas', timeCost: 1 }
+        ]
+    },
+    
     gardenShed: {
         id: 'gardenShed',
         name: 'Garden Shed',
         description: 'A small shed at the edge of the garden. Gardening tools hang on the walls. The air smells of earth and something chemical.',
         actions: [
-            { id: 'go_hall', text: 'Return to Grand Hall', location: 'grandHall', timeCost: 2 },
+            { id: 'go_garden', text: 'Return to Garden', location: 'garden', timeCost: 1 },
             { id: 'examine_tools', text: 'Examine the gardening tools', object: 'tools', timeCost: 1 }
+        ]
+    },
+    
+    medicalRoom: {
+        id: 'medicalRoom',
+        name: 'Medical Room',
+        description: 'A small medical room with a bed, medical supplies, and equipment. The room is clean and organized, but something feels off. Dr. Whitlock\'s medical bag sits on a table.',
+        actions: [
+            { id: 'go_corridor', text: 'Return to Corridor', location: 'corridor', timeCost: 1 },
+            { id: 'examine_medical_bag', text: 'Examine the medical bag', object: 'medical_bag', timeCost: 1 },
+            { id: 'examine_medical_supplies', text: 'Examine medical supplies', object: 'medical_supplies', timeCost: 1 },
+            { id: 'talk_doctor', text: 'Talk to Dr. Adrian Whitlock', suspect: 'doctor', timeCost: 1 }
         ]
     }
 };
@@ -122,7 +149,7 @@ export const objects = {
     portrait: {
         id: 'portrait',
         name: 'Family Portrait',
-        description: 'A large portrait of the Blackthorn family. Charles and Eleanor stand together, but there\'s a distance between them.',
+        description: 'A large portrait of the Blackthorn family. Charles and Eleanor stand together, but there\'s a distance between them. Behind the portrait, you discover something hidden.',
         clueId: 'family_portrait'
     },
     
@@ -291,34 +318,44 @@ export const suspects = {
         canBeKiller: true
     },
     
-    marcus: {
-        id: 'marcus',
-        name: 'Marcus Vale',
-        title: 'Business Partner',
-        description: 'Marcus Vale, Charles\'s business partner. He\'s pacing, clearly agitated.',
+    victor: {
+        id: 'victor',
+        name: 'Victor Hale',
+        title: 'Business Associate',
+        description: 'Victor Hale, Charles\'s business associate. He\'s pacing, clearly agitated.',
         location: 'corridor',
-        role: 'Business partner and friend',
+        role: 'Business associate and partner',
+        canBeKiller: true
+    },
+    
+    thomas: {
+        id: 'thomas',
+        name: 'Thomas Reed',
+        title: 'Gardener',
+        description: 'Thomas Reed, the manor\'s gardener and cleaner. He keeps to himself, working in the gardens and sheds.',
+        location: 'garden',
+        role: 'Gardener and cleaner',
+        canBeKiller: true
+    },
+    
+    doctor: {
+        id: 'doctor',
+        name: 'Dr. Adrian Whitlock',
+        title: 'Family Physician',
+        description: 'Dr. Adrian Whitlock, the family physician. He\'s examining his medical bag, looking troubled.',
+        location: 'medicalRoom',
+        role: 'Family doctor',
         canBeKiller: true
     },
     
     lydia: {
         id: 'lydia',
         name: 'Lydia Crane',
-        title: 'Household Maid',
-        description: 'Lydia Crane, the household maid. She\'s young, nervous.',
-        location: 'kitchen',
-        role: 'Household servant',
-        canBeKiller: false // NEVER the killer
-    },
-    
-    hale: {
-        id: 'hale',
-        name: 'Dr. Thomas Hale',
-        title: 'Family Physician',
-        description: 'Dr. Thomas Hale, the family physician. He\'s examining his medical bag, looking troubled.',
-        location: 'corridor',
-        role: 'Family doctor',
-        canBeKiller: true
+        title: 'The Maid',
+        description: 'Lydia Crane, the manor\'s maid. She seems nervous and keeps to herself.',
+        location: 'servants',
+        role: 'Household maid',
+        canBeKiller: false
     }
 };
 
@@ -341,29 +378,11 @@ export function getSuspect(suspectId) {
 }
 
 /**
- * Get all possible weapons (not solution-specific)
+ * Get all possible weapons (imported from weapons.js)
  * @returns {array} Array of all weapon objects
  */
 export function getAllWeapons() {
-    const weaponDefinitions = {
-        letterOpener: {
-            id: 'letterOpener',
-            name: 'Antique Letter Opener',
-            description: 'A sharp antique letter opener, missing from Charles\'s desk. The desk shows signs of a struggle.'
-        },
-        firePoker: {
-            id: 'firePoker',
-            name: 'Fire Poker',
-            description: 'A heavy fire poker from the study fireplace. Shows traces of blood and hair.'
-        },
-        syringe: {
-            id: 'syringe',
-            name: 'Syringe (sedative overdose)',
-            description: 'A medical syringe found in Dr. Hale\'s bag. Contains traces of a powerful sedative.'
-        }
-    };
-    
-    return Object.values(weaponDefinitions);
+    return getAllWeaponsFromModule();
 }
 
 /**
@@ -375,20 +394,36 @@ export function getWeapons() {
 }
 
 /**
- * Dynamic endings based on solution
+ * Dynamic endings based on active scenario
  */
 export function getEnding(endingType) {
-    if (!gameState.solution) {
+    const scenario = gameState.activeScenario || gameState.solution;
+    
+    if (!scenario) {
         return {
             title: 'Game Over',
             text: 'The game has ended.'
         };
     }
     
-    const solution = gameState.solution;
-    const killerName = solution.killerName;
-    const weaponName = solution.weaponName;
-    const motive = solution.motive;
+    // Get killer name from suspects
+    const killerId = scenario.culprit;
+    const killerSuspect = suspects[killerId];
+    const killerName = killerSuspect?.name || 'Unknown';
+    
+    // Get weapon name from found weapon or scenario
+    const weaponId = scenario.validWeapons[0]; // First valid weapon
+    const weaponObj = getAllWeapons().find(w => w.id === weaponId);
+    const weaponName = weaponObj?.name || 'Unknown Weapon';
+    
+    const motive = scenario.motive;
+    const accusedSuspect = gameState.accusation.suspect;
+    const accusedWeapon = gameState.accusation.weapon;
+    
+    // Get accused suspect name
+    const accusedSuspectName = suspects[accusedSuspect]?.name || 'Unknown';
+    const accusedWeaponObj = getAllWeapons().find(w => w.id === accusedWeapon);
+    const accusedWeaponName = accusedWeaponObj?.name || 'Unknown Weapon';
     
     const endings = {
         true: {
@@ -404,22 +439,45 @@ ${killerName}'s composure finally breaks. The truth hangs in the air like smoke.
         
         partial: {
             title: 'Incomplete Justice',
-            text: `You accuse ${killerName} of the murder, and the evidence supports your claim. They are the killer.
+            text: `You accuse ${accusedSuspectName} of the murder. ${accusedSuspectName === killerName ? 'They are indeed the killer.' : 'But your accusation is wrong.'}
 
-However, you identified the wrong weapon. The true method was the ${weaponName}. While you found the truth about the murderer, the full picture remains incomplete.
+${accusedSuspectName === killerName 
+    ? `However, you identified the wrong weapon. The true method was the ${weaponName}. While you found the truth about the murderer, the full picture remains incomplete.`
+    : `The evidence doesn't support your claim. The real killer remains at large.`}
 
-${killerName} is taken into custody, but questions linger. The case is closed, but not solved.
+${accusedSuspectName === killerName 
+    ? `${killerName} is taken into custody, but questions linger. The case is closed, but not solved.`
+    : `The storm continues, and the truth remains buried.`}
 
 **PARTIAL ENDING: Truth Half-Revealed**`
         },
         
+        false_weapon_type: {
+            title: 'Inconsistent Evidence',
+            text: `You accuse ${accusedSuspectName} using the ${accusedWeaponName}.
+
+But wait—the autopsy report contradicts your accusation. The cause of death doesn't match this weapon type. Your theory falls apart.
+
+${accusedSuspectName === killerName 
+    ? `You were on the right track about the killer, but the weapon evidence doesn't align. The autopsy is clear: this weapon could not have caused the death.`
+    : `Your accusation is wrong on multiple levels. The evidence doesn't support your theory.`}
+
+The investigation continues, but your credibility has been damaged. Time is running out.
+
+**FAILED: Evidence Inconsistency**`
+        },
+        
         false: {
             title: 'Wrong Accusation',
-            text: `You point your finger, confident in your accusation. But as the words leave your mouth, you realize your mistake.
+            text: `You point your finger at ${accusedSuspectName}, confident in your accusation. But as the words leave your mouth, you realize your mistake.
 
 The evidence doesn't align. Your accusation falls apart under scrutiny, and the real killer watches from the shadows, knowing they've escaped justice.
 
-The storm continues, and the truth remains buried. You have failed.
+${gameState.timeRemaining > 0 
+    ? `You still have time to reconsider, but suspicion is mounting.`
+    : `Time has run out. The truth remains buried.`}
+
+The storm continues, and Blackthorn Manor keeps its secrets.
 
 **FALSE ENDING: Justice Denied**`
         },
