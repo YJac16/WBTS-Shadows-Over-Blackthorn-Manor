@@ -1,14 +1,13 @@
 /**
  * Weapon System
- * 
- * Fixed weapon locations - weapons are always in the same place.
+ *
+ * Weapons are randomized into examinable object slots each playthrough.
  */
 
 import { rooms } from './scenes.js';
 
 /**
- * All weapon definitions
- * Matches scenario weapon IDs
+ * All weapon definitions — one correct murder weapon per scenario
  */
 export const ALL_WEAPONS = {
     poison_vial: {
@@ -34,26 +33,74 @@ export const ALL_WEAPONS = {
         name: 'Surgical Scalpel',
         description: 'A precision surgical scalpel. Extremely sharp, designed for precise incisions.',
         type: 'precision_incision'
+    },
+    kitchen_knife: {
+        id: 'kitchen_knife',
+        name: 'Kitchen Knife',
+        description: 'A sturdy kitchen carving knife. The blade shows faint traces of recent cleaning.',
+        type: 'lacerations'
     }
 };
 
 /**
- * Fixed weapon locations
- * Weapons are always in these specific locations
+ * Collect examinable object IDs from all rooms
+ * @returns {string[]}
+ */
+export function getExaminableSlots() {
+    const slots = new Set();
+    Object.values(rooms).forEach(room => {
+        (room.actions || []).forEach(action => {
+            if (action.object) {
+                slots.add(action.object);
+            }
+        });
+    });
+    return Array.from(slots);
+}
+
+/**
+ * Shuffle array in place (Fisher–Yates)
+ * @param {array} arr
+ * @returns {array}
+ */
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+/**
+ * Randomly place each weapon in a unique examinable object slot
+ * @returns {object} Map of weaponId -> objectId
+ */
+export function randomizeWeaponLocations() {
+    const weaponIds = Object.keys(ALL_WEAPONS);
+    const slots = shuffle(getExaminableSlots());
+
+    if (slots.length < weaponIds.length) {
+        console.error('VALIDATION ERROR: Not enough examinable slots for weapons.');
+    }
+
+    const locations = {};
+    weaponIds.forEach((weaponId, index) => {
+        locations[weaponId] = slots[index % slots.length];
+    });
+    return locations;
+}
+
+/**
+ * @deprecated Use randomizeWeaponLocations — kept for compatibility
  */
 export function getWeaponLocations() {
-    return {
-        poison_vial: 'medicalRoom',        // Medical Room
-        fireplace_poker: 'eleanorRoom',    // Eleanor's Room
-        letter_opener: 'fireplace',        // Fireplace in Study
-        scalpel: 'marcusRoom'              // Victor's Room
-    };
+    return randomizeWeaponLocations();
 }
 
 /**
  * Get weapon by ID
- * @param {string} weaponId - Weapon ID
- * @returns {object|null} Weapon object or null
+ * @param {string} weaponId
+ * @returns {object|null}
  */
 export function getWeapon(weaponId) {
     return ALL_WEAPONS[weaponId] || null;
@@ -61,7 +108,7 @@ export function getWeapon(weaponId) {
 
 /**
  * Get all weapons
- * @returns {array} Array of all weapon objects
+ * @returns {array}
  */
 export function getAllWeapons() {
     return Object.values(ALL_WEAPONS);
@@ -69,10 +116,6 @@ export function getAllWeapons() {
 
 /**
  * Check if a weapon is in a specific room or object
- * @param {string} weaponId - Weapon ID
- * @param {string} roomId - Room ID or object ID
- * @param {object} weaponLocations - Weapon locations map
- * @returns {boolean} True if weapon is in room/object
  */
 export function isWeaponInRoom(weaponId, roomId, weaponLocations) {
     return weaponLocations[weaponId] === roomId;
@@ -80,12 +123,7 @@ export function isWeaponInRoom(weaponId, roomId, weaponLocations) {
 
 /**
  * Check if a weapon is found by examining a specific object
- * @param {string} weaponId - Weapon ID
- * @param {string} objectId - Object ID
- * @param {object} weaponLocations - Weapon locations map
- * @returns {boolean} True if weapon is found by examining object
  */
 export function isWeaponInObject(weaponId, objectId, weaponLocations) {
     return weaponLocations[weaponId] === objectId;
 }
-

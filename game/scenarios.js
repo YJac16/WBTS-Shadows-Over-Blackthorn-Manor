@@ -1,75 +1,59 @@
 /**
  * Narrative Scenario Definitions
- * 
- * Central source of truth for all game scenarios.
- * All game logic derives from these definitions.
+ *
+ * Five hidden scenarios — one randomly selected per playthrough.
+ * Player must NEVER see scenario IDs, names, or hints.
  */
 
-/**
- * Canonical Scenario Definitions
- * 
- * Four hidden scenarios - one randomly selected per playthrough.
- * Player must NEVER see scenario IDs, names, or hints.
- * All logic derives from these definitions.
- * 
- * Scenario A - Poison: Eleanor, will removal, poison vial
- * Scenario B - Sharp Force: Victor, embezzlement, letter opener
- * Scenario C - Blunt Force: Thomas, fear of replacement, fireplace poker
- * Scenario D - Precision Incision: Doctor, malpractice cover-up, scalpel
- */
 export const SCENARIOS = {
-    // Scenario A – Poison
     wife_poison: {
         id: 'wife_poison',
         culprit: 'eleanor',
         causeOfDeath: 'poison',
-        validWeapons: ['poison_vial'], // Only poison vial is correct
+        validWeapons: ['poison_vial'],
         autopsyText: 'Internal poisoning detected. No external wounds. Toxic compounds found in the bloodstream. Death occurred shortly after ingestion.',
         motive: 'Removed from Charles Blackthorn\'s will days before his death.',
         narrativeNotes: {
-            eleanor: 'Defensive. Mentions betrayal and financial uncertainty.',
-            victor: 'Dismisses poisoning as unlikely.',
-            thomas: 'Mentions Eleanor prepared Charles\'s drink.',
-            doctor: 'Explains poison symptoms clinically.',
-            lydia: 'Claims she was in the kitchen all evening. Seems genuinely frightened.'
+            eleanor: 'She speaks carefully about money and loyalty, as if every word might be used against her.',
+            victor: 'He insists a quiet death like this does not fit a business quarrel, and keeps steering you toward the household.',
+            thomas: 'He remembers Eleanor preparing Charles\'s evening drink herself — unusual, he says.',
+            doctor: 'He describes classic poison symptoms with clinical calm: no struggle marks, only what was swallowed.',
+            lydia: 'She says she stayed in the kitchen, but saw Eleanor carry a tray toward the study before the storm worsened.'
         }
     },
 
-    // Scenario B – Sharp Force
-    businessman_sharp: {
-        id: 'businessman_sharp',
+    victor_sharp: {
+        id: 'victor_sharp',
         culprit: 'victor',
         causeOfDeath: 'lacerations',
         validWeapons: ['letter_opener'],
         autopsyText: 'Clean sharp wounds consistent with stabbing. Multiple sharp-force lacerations caused fatal internal bleeding.',
         motive: 'Charles uncovered Victor\'s embezzlement and threatened exposure.',
         narrativeNotes: {
-            victor: 'Aggressive. Avoids financial questions.',
-            eleanor: 'Mentions heated argument over money.',
-            thomas: 'Heard shouting from the study.',
-            doctor: 'Confirms wounds are not surgical.',
-            lydia: 'Heard raised voices but didn\'t see anything. Stayed in the kitchen.'
+            victor: 'He grows sharp when money is mentioned and insists the books are "complicated," not criminal.',
+            eleanor: 'She recalls a furious argument over accounts — Victor left the study red-faced earlier that evening.',
+            thomas: 'He heard shouting from the study, then silence. Metal scraped somewhere nearby.',
+            doctor: 'He confirms the wounds are jagged and personal, not surgical precision.',
+            lydia: 'She overheard Victor demand "one more day" before Charles cut him off for good.'
         }
     },
 
-    // Scenario C – Blunt Force
     gardener_blunt: {
         id: 'gardener_blunt',
         culprit: 'thomas',
         causeOfDeath: 'blunt_force',
         validWeapons: ['fireplace_poker'],
         autopsyText: 'Severe blunt-force trauma to the back of the skull. Evidence suggests the injury was staged to look like an accident.',
-        motive: 'Feared being replaced after overhearing staff changes.',
+        motive: 'Feared being replaced after overhearing planned staff cuts.',
         narrativeNotes: {
-            thomas: 'Overly nervous. Claims it was an accident.',
-            eleanor: 'Confirms Charles planned staff restructuring.',
-            victor: 'Dismisses the death as clumsiness.',
-            doctor: 'Rules out accidental fall.',
-            lydia: 'Saw Thomas near the study earlier. Didn\'t think much of it at the time.'
+            thomas: 'He swears Charles slipped, but he cannot meet your eyes when he says it.',
+            eleanor: 'She confirms Charles planned to restructure the staff — Thomas\'s position was uncertain.',
+            victor: 'He shrugs it off as clumsiness, then adds that Thomas had been hovering near the study all evening.',
+            doctor: 'He rules out a simple fall; the angle of the blow required intent.',
+            lydia: 'She saw Thomas near the study with something long and dark in his hand, then told herself it was a tool.'
         }
     },
 
-    // Scenario D – Precision Incision
     doctor_precision: {
         id: 'doctor_precision',
         culprit: 'doctor',
@@ -78,11 +62,27 @@ export const SCENARIOS = {
         autopsyText: 'An extremely precise incision consistent with surgical training. The wound shows medical precision, not random violence.',
         motive: 'Charles discovered malpractice and planned to report it.',
         narrativeNotes: {
-            doctor: 'Calm, analytical, subtly defensive.',
-            eleanor: 'Mentions legal documents involving medical care.',
-            victor: 'Admits knowledge of malpractice rumors.',
-            thomas: 'Notes doctor was alone with Charles.',
-            lydia: 'Saw the doctor arrive earlier. He seemed calm, professional.'
+            doctor: 'He remains composed, speaking of "clinical inevitabilities," and avoids questions about his practice.',
+            eleanor: 'She mentions legal papers about medical care that Charles locked away only days ago.',
+            victor: 'He admits hearing malpractice rumors — Charles said he would not protect anyone this time.',
+            thomas: 'He notes the doctor was alone with Charles after everyone else left the study.',
+            lydia: 'She saw Dr. Whitlock arrive early, bag in hand, calm as if making a routine call.'
+        }
+    },
+
+    maid_knife: {
+        id: 'maid_knife',
+        culprit: 'lydia',
+        causeOfDeath: 'lacerations',
+        validWeapons: ['kitchen_knife'],
+        autopsyText: 'Deep lacerations consistent with a kitchen blade. The wounds are frantic rather than surgical, inflicted at close range.',
+        motive: 'Charles threatened to dismiss her and expose a theft that would ruin her.',
+        narrativeNotes: {
+            lydia: 'She insists she only served dinner, but flinches when you mention missing silver or the pantry.',
+            eleanor: 'She says Charles meant to dismiss Lydia — something about items vanishing from the house.',
+            victor: 'He remembers Charles muttering that a servant\'s secrets can cut deeper than any ledger.',
+            thomas: 'He saw Lydia leave the kitchen late, wiping her hands, eyes wet.',
+            doctor: 'He says the cuts look domestic — a household blade, not a surgeon\'s instrument.'
         }
     }
 };
@@ -113,4 +113,3 @@ export function getScenarioById(scenarioId) {
 export function getAllScenarioIds() {
     return Object.keys(SCENARIOS);
 }
-

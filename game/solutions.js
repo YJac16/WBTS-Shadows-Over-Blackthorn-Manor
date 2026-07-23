@@ -84,13 +84,7 @@ export function getScenarioById(scenarioId) {
  * @returns {boolean} True if suspect can be killer
  */
 export function canBeKiller(suspectId) {
-    // Lydia is NEVER the killer
-    if (suspectId === 'lydia') {
-        return false;
-    }
-    
-    // Only eleanor, marcus, james, or hale can be killers
-    return ['eleanor', 'marcus', 'james', 'hale'].includes(suspectId);
+    return ['eleanor', 'victor', 'thomas', 'doctor', 'lydia'].includes(suspectId);
 }
 
 /**

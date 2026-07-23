@@ -16,7 +16,8 @@
  */
 
 import { getRandomScenario } from './scenarios.js';
-import { getWeaponLocations } from './weapons.js';
+import { randomizeWeaponLocations } from './weapons.js';
+import { randomizeCharacterLocations } from './scenes.js';
 import { validateScenarioInitialization, validateReplayIntegrity, logDebugInfo, validateAccusationPrerequisites, isWeaponValidForScenario } from './validation.js';
 
 export const gameState = {
@@ -38,18 +39,21 @@ export const gameState = {
     visitedRooms: new Set(['grandHall']),
     examinedObjects: new Set(),
     interrogatedSuspects: new Set(),
-    discoveredClues: new Set(), // Clues discovered
+    discoveredClues: new Set(),
     journalEntries: [],
     
     // Weapon system
-    weaponLocations: {}, // Map of weaponId -> roomId where weapon is located
-    foundWeapons: [], // Array of weapon IDs that player has found
+    weaponLocations: {},
+    foundWeapons: [],
+    
+    // Character placement (randomized each playthrough)
+    characterLocations: {},
     
     // Autopsy system
     autopsyUnlocked: false,
-    causeOfDeath: null, // 'poison', 'laceration', 'blunt_trauma', 'precision_incision'
+    causeOfDeath: null,
     
-    // Character profile data (unlocked information)
+    // Character profile data
     knownCharacters: {
         eleanor: { unlocked: false, facts: [], suspicious: [], motives: [], opportunities: [] },
         victor: { unlocked: false, facts: [], suspicious: [], motives: [], opportunities: [] },
@@ -58,50 +62,62 @@ export const gameState = {
         lydia: { unlocked: false, facts: [], suspicious: [], motives: [], opportunities: [] }
     },
     
-    // Game phase
-    phase: 'investigation', // 'investigation' | 'accusation' | 'ending'
+    phase: 'investigation',
     
-    // Accusation data
     accusation: {
         suspect: null,
         weapon: null
     },
     
-    // Game completion
     gameOver: false,
     ending: null,
     
-    // Legacy support (for compatibility)
-    solution: null, // Points to activeScenario
-    suspicion: 0, // Points to suspicionLevel
-    collectedClues: null, // Points to discoveredClues
-    characterProfiles: null, // Points to knownCharacters
-    discoveredWeapons: null // Points to foundWeapons
+    // Legacy support
+    solution: null,
+    suspicion: 0,
+    collectedClues: null,
+    characterProfiles: null,
+    discoveredWeapons: null
 };
+
+function applyLegacyAccessors() {
+    gameState.solution = gameState.activeScenario;
+    Object.defineProperty(gameState, 'suspicion', {
+        get: () => gameState.suspicionLevel,
+        set: (val) => { gameState.suspicionLevel = val; },
+        configurable: true
+    });
+    Object.defineProperty(gameState, 'collectedClues', {
+        get: () => gameState.discoveredClues,
+        configurable: true
+    });
+    Object.defineProperty(gameState, 'characterProfiles', {
+        get: () => gameState.knownCharacters,
+        configurable: true
+    });
+    Object.defineProperty(gameState, 'discoveredWeapons', {
+        get: () => new Set(gameState.foundWeapons),
+        configurable: true
+    });
+}
 
 /**
  * Reset game state to initial values
- * Randomly selects a new scenario and weapon locations
+ * Randomly selects scenario, weapon slots, and character rooms
  */
 export function resetGameState() {
-    // STEP 1: Initialize scenario FIRST
     gameState.activeScenario = getRandomScenario();
+    gameState.weaponLocations = randomizeWeaponLocations();
+    gameState.characterLocations = randomizeCharacterLocations();
     
-    // STEP 2: Initialize weapon locations AFTER scenario (fixed locations)
-    gameState.weaponLocations = getWeaponLocations();
+    gameState.currentLocation = 'grandHall';
+    gameState.phase = 'investigation';
     
-    // STEP 3: Explicitly set starting room and view
-    gameState.currentLocation = 'grandHall'; // Original starting room
-    gameState.phase = 'investigation'; // Set view to room/investigation
-    
-    // Reset time system
     gameState.timeRemaining = 20;
     gameState.maxTime = 20;
     
-    // Reset suspicion system
     gameState.suspicionLevel = 0;
     
-    // Reset investigation progress
     gameState.visitedRooms = new Set(['grandHall']);
     gameState.examinedObjects = new Set();
     gameState.interrogatedSuspects = new Set();
@@ -109,11 +125,9 @@ export function resetGameState() {
     gameState.journalEntries = [];
     gameState.foundWeapons = [];
     
-    // Reset autopsy
     gameState.autopsyUnlocked = false;
     gameState.causeOfDeath = null;
     
-    // Reset character profiles
     gameState.knownCharacters = {
         eleanor: { unlocked: false, facts: [], suspicious: [], motives: [], opportunities: [] },
         victor: { unlocked: false, facts: [], suspicious: [], motives: [], opportunities: [] },
@@ -122,39 +136,44 @@ export function resetGameState() {
         lydia: { unlocked: false, facts: [], suspicious: [], motives: [], opportunities: [] }
     };
     
-    // Reset game phase
-    gameState.phase = 'investigation';
     gameState.accusation = { suspect: null, weapon: null };
     gameState.gameOver = false;
     gameState.ending = null;
     
-    // Legacy compatibility
-    gameState.solution = gameState.activeScenario;
-    gameState.suspicion = 0;
-    Object.defineProperty(gameState, 'suspicion', {
-        get: () => gameState.suspicionLevel,
-        set: (val) => { gameState.suspicionLevel = val; }
-    });
-    Object.defineProperty(gameState, 'collectedClues', {
-        get: () => gameState.discoveredClues
-    });
-    Object.defineProperty(gameState, 'characterProfiles', {
-        get: () => gameState.knownCharacters
-    });
-    Object.defineProperty(gameState, 'discoveredWeapons', {
-        get: () => new Set(gameState.foundWeapons)
-    });
+    applyLegacyAccessors();
     
-    // Validate scenario initialization
     validateScenarioInitialization();
-    
-    // Validate replay integrity
     validateReplayIntegrity();
-    
-    // Log debug info if enabled
     logDebugInfo();
-    
-    // Scenario loaded (debug only, not exposed to UI)
+}
+
+/**
+ * Apply a previously saved plain object onto gameState
+ * @param {object} data
+ */
+export function applyLoadedState(data) {
+    gameState.activeScenario = data.activeScenario;
+    gameState.timeRemaining = data.timeRemaining;
+    gameState.maxTime = data.maxTime;
+    gameState.suspicionLevel = data.suspicionLevel;
+    gameState.maxSuspicion = data.maxSuspicion ?? 100;
+    gameState.currentLocation = data.currentLocation || 'grandHall';
+    gameState.visitedRooms = new Set(data.visitedRooms || ['grandHall']);
+    gameState.examinedObjects = new Set(data.examinedObjects || []);
+    gameState.interrogatedSuspects = new Set(data.interrogatedSuspects || []);
+    gameState.discoveredClues = new Set(data.discoveredClues || []);
+    gameState.journalEntries = data.journalEntries || [];
+    gameState.weaponLocations = data.weaponLocations || {};
+    gameState.foundWeapons = data.foundWeapons || [];
+    gameState.characterLocations = data.characterLocations || {};
+    gameState.autopsyUnlocked = !!data.autopsyUnlocked;
+    gameState.causeOfDeath = data.causeOfDeath;
+    gameState.knownCharacters = data.knownCharacters;
+    gameState.phase = data.phase || 'investigation';
+    gameState.accusation = data.accusation || { suspect: null, weapon: null };
+    gameState.gameOver = !!data.gameOver;
+    gameState.ending = data.ending;
+    applyLegacyAccessors();
 }
 
 /**

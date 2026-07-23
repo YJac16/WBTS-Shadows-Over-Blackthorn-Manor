@@ -1,10 +1,10 @@
 /**
  * Media Support System
- * 
- * Handles images and audio with mobile-first considerations.
- * - Audio is optional and muteable
- * - No autoplay on mobile
- * - Respects browser limitations
+ *
+ * Handles images and mystery background music.
+ * - Soft looping track during play
+ * - Speeds up when time is low
+ * - Muteable via settings; starts after first user gesture
  */
 
 /**
@@ -41,7 +41,9 @@ export const IMAGE_REGISTRY = {
     'evidence_firePoker': '/fireplace_poker.jpg',
     'evidence_poisonVial': '/poison_vial.jpg',
     'evidence_scalpel': '/scalpel.jpg',
-    'evidence_syringe': '/scalpel.jpg', // Using scalpel as fallback (syringe not in public)
+    'evidence_kitchenKnife': '/kitchen_knife.jpg',
+    'evidence_kitchen_knife': '/kitchen_knife.jpg',
+    'evidence_syringe': '/scalpel.jpg',
     'evidence_body': '/autopsy.jpg',
     'evidence_portrait': '/family portrait.jpg',
     'object_portrait': '/family portrait.jpg',
@@ -54,181 +56,234 @@ export const IMAGE_REGISTRY = {
 
 /**
  * Audio registry
- * Maps audio IDs to paths
  */
 export const AUDIO_REGISTRY = {
-    // Ambient loops
-    'ambient_storm': '/assets/sounds/ambient/storm-loop.mp3',
-    'ambient_manor': '/assets/sounds/ambient/manor-loop.mp3',
-    
-    // Room-specific
-    'room_study': '/assets/sounds/rooms/study-ambient.mp3',
-    'room_kitchen': '/assets/sounds/rooms/kitchen-ambient.mp3',
-    
-    // Sound effects
-    'sfx_door': '/assets/sounds/sfx/door-close.mp3',
-    'sfx_paper': '/assets/sounds/sfx/paper-rustle.mp3',
-    'sfx_thunder': '/assets/sounds/sfx/thunder.mp3'
+    mystery_bg: '/mystery_background_music.mp3',
+    ambient_storm: '/assets/sounds/ambient/storm-loop.mp3',
+    ambient_manor: '/assets/sounds/ambient/manor-loop.mp3',
+    room_study: '/assets/sounds/rooms/study-ambient.mp3',
+    room_kitchen: '/assets/sounds/rooms/kitchen-ambient.mp3',
+    sfx_door: '/assets/sounds/sfx/door-close.mp3',
+    sfx_paper: '/assets/sounds/sfx/paper-rustle.mp3',
+    sfx_thunder: '/assets/sounds/sfx/thunder.mp3'
 };
+
+const MYSTERY_VOLUME = 0.22;
+const NORMAL_RATE = 1.0;
+const URGENT_RATE = 1.3;
+const URGENT_TIME_THRESHOLD = 10;
 
 /**
  * Media state
  */
 const mediaState = {
-    audioEnabled: false,
+    audioEnabled: true, // default on after unlock; user can mute in settings
+    mysteryMusic: null,
+    musicUnlocked: false,
+    gamePlaying: false,
+    lastTimeRemaining: null,
     currentAmbient: null,
     currentRoomAudio: null,
     volume: 0.5
 };
 
-/**
- * Check if audio is supported
- * @returns {boolean} True if audio is supported
- */
 export function isAudioSupported() {
     return typeof Audio !== 'undefined';
 }
 
-/**
- * Check if we're on mobile
- * @returns {boolean} True if mobile device
- */
 export function isMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
            (window.innerWidth <= 768);
 }
 
 /**
- * Enable/disable audio
- * @param {boolean} enabled - Whether to enable audio
+ * Enable/disable audio (mute override)
+ * @param {boolean} enabled
  */
 export function setAudioEnabled(enabled) {
     mediaState.audioEnabled = enabled;
-    
+
     if (!enabled) {
+        stopMysteryMusic(false);
         stopAllAudio();
-    } else if (!isMobile()) {
-        // Only autoplay on desktop if enabled
-        playAmbient('ambient_storm');
+    } else if (mediaState.gamePlaying && mediaState.musicUnlocked) {
+        startMysteryMusic();
+        if (mediaState.lastTimeRemaining != null) {
+            syncMysteryMusicTempo(mediaState.lastTimeRemaining);
+        }
     }
 }
 
 /**
- * Play ambient audio
- * @param {string} audioId - Audio ID from AUDIO_REGISTRY
+ * Mark that the player is in an active playthrough
+ * @param {boolean} playing
  */
+export function setGamePlaying(playing) {
+    mediaState.gamePlaying = playing;
+    if (!playing) {
+        stopMysteryMusic(false);
+    }
+}
+
+/**
+ * Unlock audio on first user gesture, then start mystery track if playing
+ */
+export function unlockAndStartMysteryMusic() {
+    mediaState.musicUnlocked = true;
+    if (mediaState.gamePlaying && mediaState.audioEnabled) {
+        startMysteryMusic();
+        if (mediaState.lastTimeRemaining != null) {
+            syncMysteryMusicTempo(mediaState.lastTimeRemaining);
+        }
+    }
+}
+
+/**
+ * Soft looping mystery background music
+ */
+export function startMysteryMusic() {
+    if (!mediaState.audioEnabled || !isAudioSupported() || !mediaState.gamePlaying) {
+        return;
+    }
+
+    const audioPath = AUDIO_REGISTRY.mystery_bg;
+    if (!audioPath) {
+        return;
+    }
+
+    if (mediaState.mysteryMusic) {
+        if (mediaState.mysteryMusic.paused) {
+            mediaState.mysteryMusic.play().catch(() => {});
+        }
+        return;
+    }
+
+    const audio = new Audio(audioPath);
+    audio.loop = true;
+    audio.volume = MYSTERY_VOLUME;
+    audio.playbackRate = NORMAL_RATE;
+    audio.play().catch(() => {
+        // Autoplay blocked until user gesture
+    });
+
+    mediaState.mysteryMusic = audio;
+}
+
+/**
+ * Stop mystery music
+ * @param {boolean} resetElement - If true, dispose the Audio element
+ */
+export function stopMysteryMusic(resetElement = true) {
+    if (mediaState.mysteryMusic) {
+        mediaState.mysteryMusic.pause();
+        if (resetElement) {
+            mediaState.mysteryMusic.currentTime = 0;
+            mediaState.mysteryMusic = null;
+        }
+    }
+}
+
+/**
+ * Speed up when time is running out
+ * @param {number} timeRemaining
+ */
+export function syncMysteryMusicTempo(timeRemaining) {
+    mediaState.lastTimeRemaining = timeRemaining;
+
+    if (!mediaState.mysteryMusic) {
+        return;
+    }
+
+    const targetRate = timeRemaining <= URGENT_TIME_THRESHOLD ? URGENT_RATE : NORMAL_RATE;
+    if (mediaState.mysteryMusic.playbackRate !== targetRate) {
+        mediaState.mysteryMusic.playbackRate = targetRate;
+    }
+}
+
+/**
+ * Restart soft music for a new playthrough
+ * @param {number} timeRemaining
+ */
+export function restartMysteryMusic(timeRemaining = 20) {
+    mediaState.gamePlaying = true;
+    stopMysteryMusic(true);
+    mediaState.lastTimeRemaining = timeRemaining;
+    if (mediaState.audioEnabled && mediaState.musicUnlocked) {
+        startMysteryMusic();
+        syncMysteryMusicTempo(timeRemaining);
+    }
+}
+
+/** @deprecated Prefer startMysteryMusic */
 export function playAmbient(audioId) {
+    if (audioId === 'mystery_bg' || audioId === 'ambient_storm') {
+        startMysteryMusic();
+        return;
+    }
     if (!mediaState.audioEnabled || !isAudioSupported()) {
         return;
     }
-    
-    // Don't autoplay on mobile
-    if (isMobile()) {
-        return;
-    }
-    
     const audioPath = AUDIO_REGISTRY[audioId];
     if (!audioPath) {
         return;
     }
-    
-    // Stop current ambient
     if (mediaState.currentAmbient) {
         mediaState.currentAmbient.pause();
     }
-    
     const audio = new Audio(audioPath);
     audio.loop = true;
     audio.volume = mediaState.volume;
-    audio.play().catch(() => {
-        // Autoplay blocked, user must interact first
-        console.log('Audio autoplay blocked');
-    });
-    
+    audio.play().catch(() => {});
     mediaState.currentAmbient = audio;
 }
 
-/**
- * Play room-specific audio
- * @param {string} roomId - Room ID
- */
 export function playRoomAudio(roomId) {
     if (!mediaState.audioEnabled || !isAudioSupported()) {
         return;
     }
-    
-    const audioId = `room_${roomId}`;
-    const audioPath = AUDIO_REGISTRY[audioId];
+    const audioPath = AUDIO_REGISTRY[`room_${roomId}`];
     if (!audioPath) {
         return;
     }
-    
-    // Stop current room audio
     if (mediaState.currentRoomAudio) {
         mediaState.currentRoomAudio.pause();
     }
-    
     const audio = new Audio(audioPath);
     audio.loop = true;
-    audio.volume = mediaState.volume * 0.7; // Room audio quieter than ambient
-    audio.play().catch(() => {
-        // Autoplay blocked
-    });
-    
+    audio.volume = mediaState.volume * 0.7;
+    audio.play().catch(() => {});
     mediaState.currentRoomAudio = audio;
 }
 
-/**
- * Play sound effect
- * @param {string} sfxId - Sound effect ID
- */
 export function playSFX(sfxId) {
     if (!mediaState.audioEnabled || !isAudioSupported()) {
         return;
     }
-    
     const audioPath = AUDIO_REGISTRY[sfxId];
     if (!audioPath) {
         return;
     }
-    
     const audio = new Audio(audioPath);
     audio.volume = mediaState.volume;
-    audio.play().catch(() => {
-        // Autoplay blocked
-    });
+    audio.play().catch(() => {});
 }
 
-/**
- * Stop all audio
- */
 export function stopAllAudio() {
     if (mediaState.currentAmbient) {
         mediaState.currentAmbient.pause();
         mediaState.currentAmbient = null;
     }
-    
     if (mediaState.currentRoomAudio) {
         mediaState.currentRoomAudio.pause();
         mediaState.currentRoomAudio = null;
     }
+    stopMysteryMusic(false);
 }
 
-/**
- * Get image path
- * @param {string} imageId - Image ID from IMAGE_REGISTRY
- * @returns {string|null} Image path or null
- */
 export function getImagePath(imageId) {
     return IMAGE_REGISTRY[imageId] || null;
 }
 
-/**
- * Get audio enabled state
- * @returns {boolean} True if audio is enabled
- */
 export function getAudioEnabled() {
     return mediaState.audioEnabled;
 }
-
-

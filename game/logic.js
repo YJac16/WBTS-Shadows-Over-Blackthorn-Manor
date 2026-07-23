@@ -13,7 +13,7 @@ import { gameState, consumeTime, increaseSuspicion, addClue, canAccuse, makeAccu
 import { rooms, getObject, getSuspect, getWeapons, getAllWeapons, suspects } from './scenes.js';
 import { getClueById } from './clues.js';
 import { getBestDialogue, updateProfileFromDialogue } from './dialogue.js';
-import { isWeaponInRoom, isWeaponInObject, getWeapon } from './weapons.js';
+import { isWeaponInObject, getWeapon } from './weapons.js';
 import { isWeaponValidForScenario } from './validation.js';
 
 /**
@@ -75,7 +75,7 @@ export function examineObject(objectId) {
     // Track if a weapon was found during this examination
     let foundWeapon = null;
     
-    // Check if a weapon is found by examining this object (e.g., letter opener behind portrait)
+    // Check if a weapon is found by examining this object
     const allWeapons = getAllWeapons();
     for (const weapon of allWeapons) {
         if (isWeaponInObject(weapon.id, objectId, gameState.weaponLocations)) {
@@ -83,50 +83,6 @@ export function examineObject(objectId) {
                 gameState.foundWeapons.push(weapon.id);
                 foundWeapon = weapon;
                 
-                // Check if weapon is consistent with autopsy
-                let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
-                if (gameState.autopsyUnlocked) {
-                    const isValid = isWeaponValidForScenario(weapon.id, gameState.activeScenario);
-                    if (!isValid) {
-                        weaponText += ' NOTE: This weapon is INCONSISTENT with the autopsy report.';
-                    }
-                }
-                
-                addClue(`weapon_${weapon.id}`, `Weapon Found: ${weapon.name}`, weaponText);
-            }
-        }
-    }
-    
-    // Check if a weapon is in this room (for room-based weapons)
-    const currentRoom = gameState.currentLocation;
-    for (const weapon of allWeapons) {
-        if (isWeaponInRoom(weapon.id, currentRoom, gameState.weaponLocations)) {
-            if (!gameState.foundWeapons.includes(weapon.id)) {
-                gameState.foundWeapons.push(weapon.id);
-                foundWeapon = weapon;
-                
-                // Check if weapon is consistent with autopsy
-                let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
-                if (gameState.autopsyUnlocked) {
-                    const isValid = isWeaponValidForScenario(weapon.id, gameState.activeScenario);
-                    if (!isValid) {
-                        weaponText += ' NOTE: This weapon is INCONSISTENT with the autopsy report.';
-                    }
-                }
-                
-                addClue(`weapon_${weapon.id}`, `Weapon Found: ${weapon.name}`, weaponText);
-            }
-        }
-    }
-    
-    // Check if a weapon is found by examining this object (e.g., letter opener in fireplace)
-    for (const weapon of allWeapons) {
-        if (isWeaponInObject(weapon.id, objectId, gameState.weaponLocations)) {
-            if (!gameState.foundWeapons.includes(weapon.id)) {
-                gameState.foundWeapons.push(weapon.id);
-                foundWeapon = weapon;
-                
-                // Check if weapon is consistent with autopsy
                 let weaponText = `Found: ${weapon.name}. ${weapon.description}`;
                 if (gameState.autopsyUnlocked) {
                     const isValid = isWeaponValidForScenario(weapon.id, gameState.activeScenario);
@@ -143,14 +99,13 @@ export function examineObject(objectId) {
     // Add clue if object has one (from dynamic clue system)
     if (obj.clue) {
         addClue(obj.clue.id, obj.clue.title, obj.clue.text);
-        // Don't update character profiles here - only update when speaking with suspects
     }
     
     return {
         name: obj.name,
         description: obj.description,
         clue: obj.clue,
-        foundWeapon: foundWeapon // Include weapon info if found
+        foundWeapon: foundWeapon
     };
 }
 
@@ -227,7 +182,7 @@ export function getAvailableActions() {
     
     const actions = [];
     
-    // Add location navigation actions
+    // Navigation and examine actions from room definition
     location.actions.forEach(action => {
         if (action.location) {
             actions.push({
@@ -238,7 +193,6 @@ export function getAvailableActions() {
                 timeCost: action.timeCost || 1
             });
         } else if (action.object) {
-            // Check if object has been examined
             const examined = gameState.examinedObjects.has(action.object);
             actions.push({
                 type: 'examine',
@@ -248,17 +202,29 @@ export function getAvailableActions() {
                 timeCost: action.timeCost || 1,
                 examined: examined
             });
-        } else if (action.suspect) {
-            const interrogated = gameState.interrogatedSuspects.has(action.suspect);
-            actions.push({
-                type: 'interrogate',
-                id: action.id,
-                text: interrogated ? `${action.text} (Spoken)` : action.text,
-                target: action.suspect,
-                timeCost: action.timeCost || 1,
-                interrogated: interrogated
-            });
         }
+        // Hard-coded suspect talk actions ignored — characters come from characterLocations
+    });
+    
+    // Talk actions from randomized character placement
+    const characterLocations = gameState.characterLocations || {};
+    Object.entries(characterLocations).forEach(([suspectId, roomId]) => {
+        if (roomId !== gameState.currentLocation) {
+            return;
+        }
+        const suspect = suspects[suspectId];
+        if (!suspect) {
+            return;
+        }
+        const interrogated = gameState.interrogatedSuspects.has(suspectId);
+        actions.push({
+            type: 'interrogate',
+            id: `talk_${suspectId}`,
+            text: interrogated ? `Talk to ${suspect.name} (Spoken)` : `Talk to ${suspect.name}`,
+            target: suspectId,
+            timeCost: 1,
+            interrogated: interrogated
+        });
     });
     
     // Add accusation action if conditions are met
@@ -316,12 +282,25 @@ export function getCurrentScene() {
     const isFirstVisit = !gameState.visitedRooms.has(location.id) || 
                          (gameState.visitedRooms.size === 1 && location.id === 'grandHall');
     
+    let description = isFirstVisit && location.initialDescription 
+        ? location.initialDescription 
+        : location.description;
+
+    // Note who is present in this room
+    const present = Object.entries(gameState.characterLocations || {})
+        .filter(([, roomId]) => roomId === location.id)
+        .map(([suspectId]) => suspects[suspectId]?.name)
+        .filter(Boolean);
+    if (present.length === 1) {
+        description += ` ${present[0]} is here.`;
+    } else if (present.length > 1) {
+        description += ` ${present.slice(0, -1).join(', ')} and ${present[present.length - 1]} are here.`;
+    }
+    
     return {
         name: location.name,
         location: location,
-        description: isFirstVisit && location.initialDescription 
-            ? location.initialDescription 
-            : location.description,
+        description,
         isFirstVisit: isFirstVisit
     };
 }

@@ -53,8 +53,7 @@ export const rooms = {
             { id: 'go_hall', text: 'Return to Grand Hall', location: 'grandHall', timeCost: 1 },
             { id: 'go_servants', text: 'Go to Servants\' Quarters', location: 'servants', timeCost: 1 },
             { id: 'examine_kettle', text: 'Examine the kettle', object: 'kettle', timeCost: 1 },
-            { id: 'examine_cabinet', text: 'Search the cabinets', object: 'cabinet', timeCost: 1 },
-            { id: 'talk_lydia', text: 'Talk to Lydia Crane', suspect: 'lydia', timeCost: 1 }
+            { id: 'examine_cabinet', text: 'Search the cabinets', object: 'cabinet', timeCost: 1 }
         ]
     },
     
@@ -65,8 +64,7 @@ export const rooms = {
         actions: [
             { id: 'go_kitchen', text: 'Return to Kitchen', location: 'kitchen', timeCost: 1 },
             { id: 'examine_chest', text: 'Examine the chest of drawers', object: 'chest', timeCost: 1 },
-            { id: 'examine_window', text: 'Look out the window', object: 'window', timeCost: 1 },
-            { id: 'talk_lydia', text: 'Talk to Lydia Crane', suspect: 'lydia', timeCost: 1 }
+            { id: 'examine_window', text: 'Look out the window', object: 'window', timeCost: 1 }
         ]
     },
     
@@ -78,10 +76,7 @@ export const rooms = {
             { id: 'go_hall', text: 'Return to Grand Hall', location: 'grandHall', timeCost: 1 },
             { id: 'go_eleanor_room', text: 'Go to Eleanor\'s Room', location: 'eleanorRoom', timeCost: 1 },
             { id: 'go_marcus_room', text: 'Go to Victor\'s Room', location: 'marcusRoom', timeCost: 1 },
-            { id: 'go_medical_room', text: 'Go to Medical Room', location: 'medicalRoom', timeCost: 1 },
-            { id: 'talk_eleanor', text: 'Talk to Eleanor Blackthorn', suspect: 'eleanor', timeCost: 1 },
-            { id: 'talk_victor', text: 'Talk to Victor Hale', suspect: 'victor', timeCost: 1 },
-            { id: 'talk_doctor', text: 'Talk to Dr. Adrian Whitlock', suspect: 'doctor', timeCost: 1 }
+            { id: 'go_medical_room', text: 'Go to Medical Room', location: 'medicalRoom', timeCost: 1 }
         ]
     },
     
@@ -113,8 +108,7 @@ export const rooms = {
         description: 'The manor\'s garden stretches before you. Well-tended flower beds and hedges line the paths. A small shed stands at the far edge. The storm has left everything damp and dark.',
         actions: [
             { id: 'go_hall', text: 'Return to Grand Hall', location: 'grandHall', timeCost: 1 },
-            { id: 'go_gardenShed', text: 'Go to Garden Shed', location: 'gardenShed', timeCost: 1 },
-            { id: 'talk_thomas', text: 'Talk to Thomas Reed', suspect: 'thomas', timeCost: 1 }
+            { id: 'go_gardenShed', text: 'Go to Garden Shed', location: 'gardenShed', timeCost: 1 }
         ]
     },
     
@@ -135,8 +129,7 @@ export const rooms = {
         actions: [
             { id: 'go_corridor', text: 'Return to Corridor', location: 'corridor', timeCost: 1 },
             { id: 'examine_medical_bag', text: 'Examine the medical bag', object: 'medical_bag', timeCost: 1 },
-            { id: 'examine_medical_supplies', text: 'Examine medical supplies', object: 'medical_supplies', timeCost: 1 },
-            { id: 'talk_doctor', text: 'Talk to Dr. Adrian Whitlock', suspect: 'doctor', timeCost: 1 }
+            { id: 'examine_medical_supplies', text: 'Examine medical supplies', object: 'medical_supplies', timeCost: 1 }
         ]
     }
 };
@@ -166,9 +159,11 @@ export const objects = {
         description: 'Charles\'s desk. Papers are scattered across its surface.',
         clueId: null, // Dynamic based on solution
         getClueId: () => {
-            if (!gameState.solution) return null;
-            if (gameState.solution.id === 'A') return 'embezzlement_evidence';
-            if (gameState.solution.id === 'B') return 'new_will';
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'victor_sharp') return 'embezzlement_evidence';
+            if (scenario.id === 'wife_poison') return 'new_will';
+            if (scenario.id === 'maid_knife') return 'lydia_theft_note';
             return null;
         }
     },
@@ -177,7 +172,7 @@ export const objects = {
         id: 'bookshelf',
         name: 'Bookshelf',
         description: 'Rows of books on law, business, and history.',
-        clueId: null // Red herring or solution-specific
+        clueId: null
     },
     
     fireplace: {
@@ -186,8 +181,9 @@ export const objects = {
         description: 'A large fireplace with a fire poker. The fire has burned low.',
         clueId: null,
         getClueId: () => {
-            if (!gameState.solution) return null;
-            if (gameState.solution.id === 'B') return 'fire_poker_evidence';
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'gardener_blunt') return 'fire_poker_evidence';
             return null;
         }
     },
@@ -196,14 +192,20 @@ export const objects = {
         id: 'kettle',
         name: 'Kettle',
         description: 'A copper kettle, still warm. The water inside has been used recently.',
-        clueId: null // Red herring
+        clueId: null
     },
     
     cabinet: {
         id: 'cabinet',
         name: 'Kitchen Cabinets',
         description: 'You search through the cabinets. Most contain normal kitchen supplies.',
-        clueId: null // Red herring
+        clueId: null,
+        getClueId: () => {
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'maid_knife') return 'missing_knife';
+            return null;
+        }
     },
     
     chest: {
@@ -217,7 +219,7 @@ export const objects = {
         id: 'window',
         name: 'Window',
         description: 'You look out the window. The garden shed is visible in the distance.',
-        clueId: null // Red herring
+        clueId: null
     },
     
     vanity: {
@@ -226,8 +228,9 @@ export const objects = {
         description: 'Eleanor\'s vanity. Among the cosmetics and perfumes, you find various items.',
         clueId: null,
         getClueId: () => {
-            if (!gameState.solution) return null;
-            if (gameState.solution.id === 'B') return 'emotional_neglect';
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'wife_poison') return 'emotional_neglect';
             return null;
         }
     },
@@ -238,8 +241,10 @@ export const objects = {
         description: 'A letter from a lawyer, dated two weeks ago.',
         clueId: null,
         getClueId: () => {
-            if (!gameState.solution) return null;
-            if (gameState.solution.id === 'C') return 'affair_evidence';
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'doctor_precision') return 'malpractice_letter';
+            if (scenario.id === 'wife_poison') return 'new_will';
             return null;
         }
     },
@@ -250,8 +255,9 @@ export const objects = {
         description: 'Financial documents showing business transactions.',
         clueId: null,
         getClueId: () => {
-            if (!gameState.solution) return null;
-            if (gameState.solution.id === 'A') return 'business_documents';
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'victor_sharp') return 'business_documents';
             return null;
         }
     },
@@ -259,11 +265,12 @@ export const objects = {
     briefcase: {
         id: 'briefcase',
         name: 'Briefcase',
-        description: 'Marcus\'s briefcase. Inside, you find financial documents.',
+        description: 'Victor\'s briefcase. Inside, you find financial documents.',
         clueId: null,
         getClueId: () => {
-            if (!gameState.solution) return null;
-            if (gameState.solution.id === 'A') return 'letter_opener_missing';
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'victor_sharp') return 'letter_opener_missing';
             return null;
         }
     },
@@ -272,7 +279,33 @@ export const objects = {
         id: 'tools',
         name: 'Gardening Tools',
         description: 'Standard gardening tools. Nothing unusual.',
-        clueId: null // Red herring
+        clueId: null
+    },
+
+    medical_bag: {
+        id: 'medical_bag',
+        name: 'Medical Bag',
+        description: 'Dr. Whitlock\'s medical bag. Instruments are arranged with practiced care.',
+        clueId: null,
+        getClueId: () => {
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'doctor_precision') return 'scalpel_missing';
+            return null;
+        }
+    },
+
+    medical_supplies: {
+        id: 'medical_supplies',
+        name: 'Medical Supplies',
+        description: 'Bandages, bottles, and labeled compounds line a small shelf.',
+        clueId: null,
+        getClueId: () => {
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (!scenario) return null;
+            if (scenario.id === 'wife_poison') return 'poison_trace';
+            return null;
+        }
     }
 };
 
@@ -355,9 +388,41 @@ export const suspects = {
         description: 'Lydia Crane, the manor\'s maid. She seems nervous and keeps to herself.',
         location: 'servants',
         role: 'Household maid',
-        canBeKiller: false
+        canBeKiller: true
     }
 };
+
+/** Rooms where characters may be placed each playthrough */
+export const TALKABLE_ROOMS = [
+    'grandHall',
+    'kitchen',
+    'servants',
+    'corridor',
+    'eleanorRoom',
+    'marcusRoom',
+    'garden',
+    'gardenShed',
+    'medicalRoom',
+    'study'
+];
+
+/**
+ * Randomize distinct room for each suspect
+ * @returns {object} Map of suspectId -> roomId
+ */
+export function randomizeCharacterLocations() {
+    const suspectIds = Object.keys(suspects);
+    const roomsPool = [...TALKABLE_ROOMS];
+    for (let i = roomsPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roomsPool[i], roomsPool[j]] = [roomsPool[j], roomsPool[i]];
+    }
+    const locations = {};
+    suspectIds.forEach((id, index) => {
+        locations[id] = roomsPool[index % roomsPool.length];
+    });
+    return locations;
+}
 
 /**
  * Get suspect with dynamic dialogue

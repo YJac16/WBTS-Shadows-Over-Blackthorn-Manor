@@ -27,13 +27,13 @@ export function validateScenarioInitialization() {
     }
     
     const weaponCount = Object.keys(gameState.weaponLocations || {}).length;
-    if (weaponCount !== 4) {
-        const error = `VALIDATION ERROR: Expected 4 weapons, found ${weaponCount}. Weapon locations invalid.`;
+    if (weaponCount !== 5) {
+        const error = `VALIDATION ERROR: Expected 5 weapons, found ${weaponCount}. Weapon locations invalid.`;
         console.error(error);
         errors.push(error);
     }
     
-    // Verify all 5 weapons are present
+    // Verify all weapons are present
     const allWeapons = getAllWeapons();
     const weaponIds = allWeapons.map(w => w.id);
     for (const weaponId of weaponIds) {
@@ -42,6 +42,13 @@ export function validateScenarioInitialization() {
             console.error(error);
             errors.push(error);
         }
+    }
+
+    const charCount = Object.keys(gameState.characterLocations || {}).length;
+    if (charCount !== 5) {
+        const error = `VALIDATION ERROR: Expected 5 character locations, found ${charCount}.`;
+        console.error(error);
+        errors.push(error);
     }
     
     // Scenario info is NEVER logged to prevent exposure
@@ -187,10 +194,10 @@ export function validateReplayIntegrity() {
         errors.push('activeScenario is null after reset');
     }
     
-    // Check that weapon locations are set (fixed locations, always 4 weapons)
+    // Check that weapon locations are set (5 weapons)
     const weaponCount = Object.keys(gameState.weaponLocations || {}).length;
-    if (weaponCount !== 4) {
-        errors.push(`Weapon locations invalid: ${weaponCount} weapons found (expected 4)`);
+    if (weaponCount !== 5) {
+        errors.push(`Weapon locations invalid: ${weaponCount} weapons found (expected 5)`);
     }
     
     // Check that journal is cleared

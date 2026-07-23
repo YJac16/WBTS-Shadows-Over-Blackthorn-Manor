@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Whispers Before the Silence: Shadows Over Blackthorn Manor</title>
     <link rel="stylesheet" href="/style.css">
 </head>
@@ -10,32 +10,15 @@
     <div id="app">
         <div id="game-container">
             <header id="game-header">
-                <div id="game-title">Whispers Before the Silence</div>
-                <div id="episode-title">Shadows Over Blackthorn Manor</div>
-                <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+                <div class="header-text">
+                    <div id="game-title">Whispers Before the Silence</div>
+                    <div id="episode-title">Shadows Over Blackthorn Manor</div>
+                </div>
+                <div id="mobile-header-stats" class="mobile-header-stats" aria-live="polite">
+                    <span>Time <strong id="time-value">20</strong></span>
+                    <span>Suspicion <strong id="suspicion-value">0</strong></span>
+                </div>
             </header>
-            
-            <nav id="mobile-nav" class="mobile-nav hidden">
-                <div class="nav-section">
-                    <h3>Game Info</h3>
-                    <div id="nav-stats">
-                        <div id="time-remaining">Time: <span id="time-value">20</span></div>
-                        <div id="suspicion-level">Suspicion: <span id="suspicion-value">0</span></div>
-                    </div>
-                </div>
-                <div class="nav-section">
-                    <button class="nav-button" data-panel="journal">Clue Journal</button>
-                    <button class="nav-button" data-panel="settings">Settings</button>
-                </div>
-                <div class="nav-section">
-                    <h3>Characters</h3>
-                    <div id="nav-characters"></div>
-                </div>
-            </nav>
             
             <div id="game-stats" class="desktop-stats">
                 <div id="time-remaining">Time: <span id="time-value-desktop">20</span></div>
@@ -43,8 +26,18 @@
             </div>
             
             <main id="game-content">
-                <div id="scene-display"></div>
-                <div id="choices-container"></div>
+                <div id="room-stage" class="room-stage is-hidden" aria-hidden="true">
+                    <div class="room-stage-frame">
+                        <img id="room-stage-image" class="room-image" alt="" />
+                    </div>
+                    <div id="room-stage-name" class="location"></div>
+                </div>
+                <div id="scene-scroll">
+                    <div id="scene-narrative"></div>
+                    <div id="choices-container"></div>
+                </div>
+                <!-- Legacy id kept for ending/fallback scripts -->
+                <div id="scene-display" class="sr-only" aria-hidden="true"></div>
             </main>
             
             <aside id="journal-sidebar" class="desktop-sidebar">
@@ -54,11 +47,16 @@
                 <div id="profiles-content"></div>
             </aside>
         </div>
+
+        <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Investigation">
+            <button type="button" class="bottom-nav-btn" data-panel="journal">Journal</button>
+            <button type="button" class="bottom-nav-btn" data-panel="profiles">Characters</button>
+            <button type="button" class="bottom-nav-btn" data-panel="settings">Settings</button>
+        </nav>
         
-        <!-- Mobile Panels (overlay) -->
         <div id="mobile-panel-overlay" class="mobile-panel-overlay hidden">
             <div id="mobile-panel" class="mobile-panel">
-                <button id="panel-close" class="panel-close">×</button>
+                <button id="panel-close" class="panel-close" aria-label="Close">×</button>
                 <div id="panel-content"></div>
             </div>
         </div>
@@ -74,5 +72,3 @@
     <script type="module" src="/main.js"></script>
 </body>
 </html>
-
-

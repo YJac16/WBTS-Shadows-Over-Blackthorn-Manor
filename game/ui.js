@@ -8,34 +8,69 @@
 import { gameState, isWeaponConsistentWithAutopsy } from './state.js';
 import { getEnding, suspects } from './scenes.js';
 import { getCluesSupporting, getCluesContradicting } from './clues.js';
-import { getAudioEnabled, setAudioEnabled, getImagePath } from './media.js';
+import { getAudioEnabled, setAudioEnabled, getImagePath, syncMysteryMusicTempo, stopMysteryMusic, setGamePlaying } from './media.js';
 
 // UI State
 let currentPanel = null;
+/** @type {'staging' | 'locked'} */
+let uiPhase = 'locked';
+let lastActions = [];
+let lastActionHandler = null;
+let lastSceneData = null;
+
+/**
+ * Begin description-first stage beat (hide image + real choices)
+ */
+export function beginRoomStaging() {
+    uiPhase = 'staging';
+}
+
+/**
+ * Lock into room view with sticky image + choices
+ */
+export function lockRoomView() {
+    uiPhase = 'locked';
+}
+
+export function getUiPhase() {
+    return uiPhase;
+}
+
+/**
+ * Eleanor portrait by role in the active scenario
+ */
+function getEleanorPortraitPath() {
+    const scenario = gameState.activeScenario;
+    const isCulprit = scenario?.culprit === 'eleanor';
+    const profile = gameState.knownCharacters.eleanor;
+    const hasMotive = profile?.motives?.length > 0;
+
+    if (isCulprit && (hasMotive || gameState.interrogatedSuspects.has('eleanor'))) {
+        return getImagePath('portrait_eleanor_defensive');
+    }
+    if (scenario?.causeOfDeath === 'poison' && !isCulprit) {
+        return getImagePath('portrait_eleanor_shaken');
+    }
+    if (hasMotive) {
+        return getImagePath('portrait_eleanor_defensive');
+    }
+    return getImagePath('portrait_eleanor_calm');
+}
 
 /**
  * Initialize UI
  */
 export function initUI() {
-    // Mobile nav toggle
-    const navToggle = document.getElementById('nav-toggle');
-    const mobileNav = document.getElementById('mobile-nav');
-    
-    if (navToggle && mobileNav) {
-        navToggle.addEventListener('click', () => {
-            mobileNav.classList.toggle('hidden');
-        });
-    }
-    
-    // Panel navigation
-    document.querySelectorAll('.nav-button').forEach(button => {
+    // Bottom nav + any remaining data-panel buttons
+    document.querySelectorAll('.bottom-nav-btn, .nav-button[data-panel]').forEach(button => {
         button.addEventListener('click', (e) => {
-            const panel = e.target.dataset.panel;
-            showMobilePanel(panel);
+            const panel = e.currentTarget.dataset.panel;
+            if (panel) {
+                showMobilePanel(panel);
+            }
         });
     });
     
-    // Panel close
     const panelClose = document.getElementById('panel-close');
     const panelOverlay = document.getElementById('mobile-panel-overlay');
     
@@ -52,18 +87,6 @@ export function initUI() {
             }
         });
     }
-    
-    // Close mobile nav when clicking outside
-    if (mobileNav) {
-        document.addEventListener('click', (e) => {
-            if (!mobileNav.contains(e.target) && !navToggle.contains(e.target)) {
-                mobileNav.classList.add('hidden');
-            }
-        });
-    }
-    
-    // Initialize character names in mobile nav
-    updateNavCharacters();
 }
 
 /**
@@ -108,6 +131,11 @@ export function updateStats() {
     updateTimeElement(timeElementDesktop);
     updateSuspicionElement(suspicionElement);
     updateSuspicionElement(suspicionElementDesktop);
+
+    // Soft mystery music speeds up at time <= 10
+    if (!gameState.gameOver) {
+        syncMysteryMusicTempo(gameState.timeRemaining);
+    }
 }
 
 /**
@@ -115,36 +143,47 @@ export function updateStats() {
  * @param {object} sceneData - Scene data from getCurrentScene()
  */
 export function renderScene(sceneData) {
-    const sceneDisplay = document.getElementById('scene-display');
-    if (!sceneDisplay) {
-        return;
-    }
-    
-    if (!sceneData) {
-        // Fallback to ensure text always appears
-        const roomImage = getImagePath('room_grandHall');
-        sceneDisplay.innerHTML = `
-            ${roomImage ? `<img src="${roomImage}" alt="Grand Hall" class="room-image" />` : ''}
-            <div class="location">Grand Hall</div>
-            <p>You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.</p>
-        `;
-        return;
-    }
-    
-    // Handle both old and new scene data formats
-    const locationName = sceneData.name || (sceneData.location ? sceneData.location.name : 'Grand Hall');
-    const description = sceneData.description || 'You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.';
-    
-    // Get room image
+    const roomStage = document.getElementById('room-stage');
+    const stageImage = document.getElementById('room-stage-image');
+    const stageName = document.getElementById('room-stage-name');
+    const narrative = document.getElementById('scene-narrative');
+
+    const locationName = sceneData?.name
+        || sceneData?.location?.name
+        || 'Grand Hall';
+    const description = sceneData?.description
+        || 'You stand in the grand hall of Blackthorn Manor. The storm rages outside, and you know there is no escape until morning. Charles Blackthorn lies dead in his study. Someone in this house is the killer.';
     const roomId = gameState.currentLocation || 'grandHall';
     const roomImage = getImagePath(`room_${roomId}`);
-    
-    // Ensure content is always set
-    sceneDisplay.innerHTML = `
-        ${roomImage ? `<img src="${roomImage}" alt="${locationName}" class="room-image" />` : ''}
-        <div class="location">${locationName}</div>
-        <p>${description}</p>
-    `;
+
+    lastSceneData = sceneData || { name: locationName, description };
+
+    if (narrative) {
+        narrative.classList.toggle('staging', uiPhase === 'staging');
+        if (uiPhase === 'staging') {
+            narrative.innerHTML = `
+                <div class="location">${locationName}</div>
+                <p>${description}</p>
+            `;
+        } else {
+            narrative.innerHTML = `<p>${description}</p>`;
+        }
+    }
+
+    if (roomStage && stageImage && stageName) {
+        if (uiPhase === 'locked' && roomImage) {
+            roomStage.classList.remove('is-hidden');
+            roomStage.setAttribute('aria-hidden', 'false');
+            stageImage.src = roomImage;
+            stageImage.alt = locationName;
+            stageName.textContent = locationName;
+        } else {
+            roomStage.classList.add('is-hidden');
+            roomStage.setAttribute('aria-hidden', 'true');
+            stageImage.removeAttribute('src');
+            stageName.textContent = '';
+        }
+    }
 }
 
 /**
@@ -157,10 +196,26 @@ export function renderChoices(actions, onActionClick) {
     if (!choicesContainer) {
         return;
     }
+
+    lastActions = actions || [];
+    lastActionHandler = onActionClick;
     
     choicesContainer.innerHTML = '';
+
+    if (uiPhase === 'staging') {
+        const continueBtn = document.createElement('button');
+        continueBtn.className = 'choice-button continue-stage';
+        continueBtn.textContent = 'Continue';
+        continueBtn.addEventListener('click', () => {
+            lockRoomView();
+            renderScene(lastSceneData || { name: 'Grand Hall', description: '' });
+            renderChoices(lastActions, lastActionHandler);
+        });
+        choicesContainer.appendChild(continueBtn);
+        return;
+    }
     
-    if (actions.length === 0) {
+    if (!actions || actions.length === 0) {
         choicesContainer.innerHTML = '<p class="text-center">No actions available.</p>';
         return;
     }
@@ -176,12 +231,8 @@ export function renderChoices(actions, onActionClick) {
             button.classList.add('danger');
         }
         
-        if (action.examined || action.interrogated) {
-            button.disabled = false; // Allow re-examination/re-interrogation
-        }
-        
         button.addEventListener('click', () => {
-            if (!button.disabled) {
+            if (!button.disabled && onActionClick) {
                 onActionClick(action);
             }
         });
@@ -192,49 +243,21 @@ export function renderChoices(actions, onActionClick) {
 
 /**
  * Update character names in mobile nav
+ * @deprecated Bottom nav opens profiles panel directly
  */
 function updateNavCharacters() {
-    const navCharacters = document.getElementById('nav-characters');
-    if (!navCharacters) {
-        return;
-    }
-    
-    navCharacters.innerHTML = '';
-    
-    Object.values(suspects).forEach(suspect => {
-        // Validation: Profiles must be hidden until interaction
-        const profile = gameState.knownCharacters[suspect.id];
-        if (!profile || !profile.unlocked) {
-            return; // Only show characters after speaking with them
-        }
-        
-        const charButton = document.createElement('button');
-        charButton.className = 'nav-button';
-        charButton.textContent = suspect.name;
-        charButton.dataset.panel = 'profiles';
-        charButton.dataset.suspectId = suspect.id;
-        charButton.addEventListener('click', (e) => {
-            showMobilePanel('profiles', suspect.id);
-        });
-        navCharacters.appendChild(charButton);
-    });
-    
-    if (navCharacters.children.length === 0) {
-        navCharacters.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">Speak with characters to unlock their profiles.</p>';
-    }
+    // no-op — characters live in the profiles panel
 }
 
 /**
  * Update journal display
  */
 export function updateJournal() {
-    // Desktop journal
     const journalContent = document.getElementById('journal-content');
     if (journalContent) {
         updateJournalContent(journalContent);
     }
     
-    // Mobile journal (if panel is open)
     if (currentPanel === 'journal') {
         const panelContent = document.getElementById('panel-content');
         if (panelContent) {
@@ -246,11 +269,7 @@ export function updateJournal() {
         }
     }
     
-    // Update character profiles in desktop sidebar
     updateProfilesSidebar();
-    
-    // Update character names in mobile nav
-    updateNavCharacters();
 }
 
 /**
@@ -295,21 +314,13 @@ function showMobilePanel(panelName, suspectId = null) {
     currentPanel = panelName;
     const panelOverlay = document.getElementById('mobile-panel-overlay');
     const panelContent = document.getElementById('panel-content');
-    const mobileNav = document.getElementById('mobile-nav');
     
     if (!panelOverlay || !panelContent) {
         return;
     }
     
-    // Hide mobile nav
-    if (mobileNav) {
-        mobileNav.classList.add('hidden');
-    }
-    
-    // Show panel
     panelOverlay.classList.remove('hidden');
     
-    // Render panel content
     switch (panelName) {
         case 'journal':
             renderJournalPanel(panelContent);
@@ -378,18 +389,7 @@ function updateProfilesSidebar() {
         // Get character portrait - Eleanor has emotional states
         let portraitImage = null;
         if (suspect.id === 'eleanor') {
-            // Determine Eleanor's emotional state based on discovered clues
-            const hasMotive = profile.motives && profile.motives.length > 0;
-            const hasPoisonEvidence = gameState.foundWeapons.includes('poison_vial') || 
-                                     (gameState.discoveredClues.has('autopsy') && gameState.causeOfDeath === 'poison');
-            
-            if (hasPoisonEvidence) {
-                portraitImage = getImagePath('portrait_eleanor_shaken');
-            } else if (hasMotive) {
-                portraitImage = getImagePath('portrait_eleanor_defensive');
-            } else {
-                portraitImage = getImagePath('portrait_eleanor_calm');
-            }
+            portraitImage = getEleanorPortraitPath();
         } else {
             portraitImage = getImagePath(`portrait_${suspect.id}`);
         }
@@ -500,18 +500,7 @@ function renderProfilesPanel(container, suspectId = null) {
         // Get character portrait - Eleanor has emotional states
         let portraitImage = null;
         if (suspect.id === 'eleanor') {
-            // Determine Eleanor's emotional state based on discovered clues
-            const hasMotive = profile.motives && profile.motives.length > 0;
-            const hasPoisonEvidence = gameState.foundWeapons.includes('poison_vial') || 
-                                     (gameState.discoveredClues.has('autopsy') && gameState.causeOfDeath === 'poison');
-            
-            if (hasPoisonEvidence) {
-                portraitImage = getImagePath('portrait_eleanor_shaken');
-            } else if (hasMotive) {
-                portraitImage = getImagePath('portrait_eleanor_defensive');
-            } else {
-                portraitImage = getImagePath('portrait_eleanor_calm');
-            }
+            portraitImage = getEleanorPortraitPath();
         } else {
             portraitImage = getImagePath(`portrait_${suspect.id}`);
         }
@@ -695,23 +684,32 @@ export function renderEnding(endingId) {
     if (!ending) {
         return;
     }
+
+    setGamePlaying(false);
+    stopMysteryMusic(true);
+    document.body.classList.add('ending-active');
     
-    const sceneDisplay = document.getElementById('scene-display');
+    const roomStage = document.getElementById('room-stage');
+    const narrative = document.getElementById('scene-narrative');
     const choicesContainer = document.getElementById('choices-container');
     
-    // Get ending image
     let endingImage = null;
     if (endingId === 'true') {
         endingImage = getImagePath('ending_success');
-    } else if (endingId === 'timeout' || endingId === 'false') {
+    } else if (endingId === 'timeout' || endingId === 'false' || endingId === 'partial' || endingId === 'false_weapon_type') {
         endingImage = getImagePath('ending_failure');
     }
+
+    if (roomStage) {
+        roomStage.classList.add('is-hidden');
+    }
     
-    if (sceneDisplay) {
-        sceneDisplay.innerHTML = `
+    if (narrative) {
+        narrative.classList.remove('staging');
+        narrative.innerHTML = `
             ${endingImage ? `<img src="${endingImage}" alt="${ending.title}" class="ending-image" />` : ''}
             <h2>${ending.title}</h2>
-            <div style="white-space: pre-line; line-height: 1.8;">${ending.text}</div>
+            <div class="ending-text" style="white-space: pre-line; line-height: 1.8;">${ending.text}</div>
         `;
     }
     
@@ -720,20 +718,17 @@ export function renderEnding(endingId) {
         playAgainButton.className = 'choice-button';
         playAgainButton.textContent = 'Play Again';
         playAgainButton.addEventListener('click', () => {
-            // Trigger play again event (main.js will handle reset)
+            document.body.classList.remove('ending-active');
             window.dispatchEvent(new CustomEvent('playAgain'));
         });
         choicesContainer.innerHTML = '';
         choicesContainer.appendChild(playAgainButton);
     }
     
-    // Hide stats and journal in ending
     const stats = document.getElementById('game-stats');
     const journal = document.getElementById('journal-sidebar');
-    const mobileNav = document.getElementById('mobile-nav');
     if (stats) stats.style.display = 'none';
     if (journal) journal.style.display = 'none';
-    if (mobileNav) mobileNav.style.display = 'none';
 }
 
 /**
@@ -742,14 +737,20 @@ export function renderEnding(endingId) {
  * @param {function} onAccuse - Callback when accusation is made
  */
 export function renderAccusationInterface(accusationData, onAccuse) {
-    const sceneDisplay = document.getElementById('scene-display');
+    const roomStage = document.getElementById('room-stage');
+    const narrative = document.getElementById('scene-narrative');
     const choicesContainer = document.getElementById('choices-container');
     
-    if (!sceneDisplay || !choicesContainer) {
+    if (!narrative || !choicesContainer) {
         return;
     }
+
+    if (roomStage) {
+        roomStage.classList.add('is-hidden');
+    }
     
-    sceneDisplay.innerHTML = `
+    narrative.classList.remove('staging');
+    narrative.innerHTML = `
         <h2>Make Your Accusation</h2>
         <p>The time has come. You must name the killer and the weapon they used.</p>
         <p style="color: var(--text-muted); font-style: italic;">Choose carefully. There are no second chances.</p>
@@ -900,15 +901,14 @@ export function showExaminationResult(result) {
         // Check if a weapon was found - show weapon image
         if (result.foundWeapon) {
             const weaponId = result.foundWeapon.id;
-            // Map weapon IDs to image keys
-            let imageKey = `evidence_${weaponId}`;
-            if (weaponId === 'letter_opener') {
-                imageKey = 'evidence_letterOpener';
-            } else if (weaponId === 'fireplace_poker') {
-                imageKey = 'evidence_firePoker';
-            } else if (weaponId === 'poison_vial') {
-                imageKey = 'evidence_poisonVial';
-            }
+            const imageKeyMap = {
+                letter_opener: 'evidence_letterOpener',
+                fireplace_poker: 'evidence_firePoker',
+                poison_vial: 'evidence_poisonVial',
+                scalpel: 'evidence_scalpel',
+                kitchen_knife: 'evidence_kitchenKnife'
+            };
+            const imageKey = imageKeyMap[weaponId] || `evidence_${weaponId}`;
             
             const weaponImage = getImagePath(imageKey);
             if (weaponImage) {
@@ -970,19 +970,7 @@ export function showInterrogationResult(result) {
     // Get character portrait - Eleanor has emotional states
     let portraitImage = null;
     if (suspectId === 'eleanor') {
-        // Determine Eleanor's emotional state based on discovered clues
-        const profile = gameState.knownCharacters[suspectId];
-        const hasMotive = profile?.motives && profile.motives.length > 0;
-        const hasPoisonEvidence = gameState.foundWeapons.includes('poison_vial') || 
-                                 (gameState.discoveredClues.has('autopsy') && gameState.causeOfDeath === 'poison');
-        
-        if (hasPoisonEvidence) {
-            portraitImage = getImagePath('portrait_eleanor_shaken');
-        } else if (hasMotive) {
-            portraitImage = getImagePath('portrait_eleanor_defensive');
-        } else {
-            portraitImage = getImagePath('portrait_eleanor_calm');
-        }
+        portraitImage = getEleanorPortraitPath();
     } else if (suspectId) {
         portraitImage = getImagePath(`portrait_${suspectId}`);
     }

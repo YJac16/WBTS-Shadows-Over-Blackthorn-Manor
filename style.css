@@ -54,31 +54,25 @@ body {
     flex-shrink: 0;
 }
 
-.nav-toggle {
-    display: none;
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    cursor: pointer;
+.header-text {
+    display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 0.5rem;
+    align-items: center;
+    gap: 0.25rem;
 }
 
-.nav-toggle span {
-    width: 24px;
-    height: 2px;
-    background-color: var(--text-soft);
-    transition: all 0.3s ease;
+.mobile-header-stats {
+    display: none;
+}
+
+.nav-toggle {
+    display: none;
 }
 
 #game-title {
     font-size: 1.5rem;
     letter-spacing: 0.1em;
     color: var(--text-soft);
-    margin-bottom: 0.5rem;
 }
 
 #episode-title {
@@ -103,42 +97,9 @@ body {
     display: flex;
 }
 
-/* Mobile Navigation */
+/* Mobile Navigation (legacy drawer — unused; bottom nav is primary) */
 .mobile-nav {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 280px;
-    height: 100vh;
-    background-color: var(--bg-darker);
-    border-left: 1px solid var(--border-subtle);
-    z-index: 100;
-    padding: 2rem 1.5rem;
-    overflow-y: auto;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-}
-
-.mobile-nav:not(.hidden) {
-    transform: translateX(0);
-}
-
-.mobile-nav .nav-section {
-    margin-bottom: 2rem;
-}
-
-.mobile-nav .nav-section h3 {
-    font-size: 1rem;
-    color: var(--text-soft);
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border-subtle);
-    padding-bottom: 0.5rem;
-}
-
-#nav-characters {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    display: none;
 }
 
 .nav-button {
@@ -147,6 +108,7 @@ body {
     border: 1px solid var(--border-subtle);
     color: var(--text-soft);
     padding: 0.75rem 1rem;
+    min-height: 44px;
     font-size: 0.95rem;
     font-family: inherit;
     cursor: pointer;
@@ -157,6 +119,11 @@ body {
 
 .nav-button:hover {
     background-color: var(--accent-subtle);
+}
+
+/* Bottom nav — mobile only */
+.mobile-bottom-nav {
+    display: none;
 }
 
 /* Mobile Panel Overlay */
@@ -404,54 +371,112 @@ body {
     max-height: calc(100vh - 200px);
 }
 
-#scene-display {
+#room-stage {
+    flex-shrink: 0;
+    background-color: var(--bg-darker);
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+    padding: 0.75rem;
+}
+
+#room-stage.is-hidden {
+    display: none;
+}
+
+.room-stage-frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+    background: #000;
+}
+
+.room-stage-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 30%, transparent 70%, rgba(0,0,0,0.45));
+}
+
+#room-stage .location {
+    font-style: italic;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+#scene-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+#scene-narrative {
     background-color: var(--bg-darker);
     padding: 1rem;
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
-    min-height: 0;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex: 1 1 0;
-    max-height: calc(100vh - 350px);
+    font-size: 0.95rem;
+    line-height: 1.55;
 }
 
-#scene-display h2 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-soft);
-    font-weight: normal;
+#scene-narrative.staging {
+    border-color: #2a2a2a;
 }
 
-
-#scene-display .location {
+#scene-narrative .location {
     font-style: italic;
     color: var(--text-muted);
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+#scene-narrative p {
+    color: var(--text-soft);
+    margin: 0;
+}
+
+#scene-narrative h2 {
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-soft);
     font-weight: normal;
 }
 
-#scene-display p {
-    margin-bottom: 0.5rem;
-    color: var(--text-soft);
-    font-size: 0.9rem;
-    line-height: 1.4;
+/* Legacy scene-display used for endings on desktop path */
+#scene-display.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
 
-/* Images - Responsive and fit to container */
+#scene-display:not(.sr-only) {
+    background-color: var(--bg-darker);
+    padding: 1rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+    overflow-y: auto;
+}
+
+/* Images */
 .room-image {
     width: 100%;
     max-width: 100%;
     height: auto;
-    max-height: 25vh;
-    object-fit: contain;
+    max-height: 28vh;
+    object-fit: cover;
     display: block;
-    margin: 0 auto 0.75rem auto;
+    margin: 0 auto;
     border-radius: 2px;
-    flex-shrink: 0;
 }
 
 .ending-image {
@@ -551,15 +576,14 @@ body {
     flex-direction: column;
     gap: 0.5rem;
     flex: 0 0 auto;
-    max-height: 35vh;
-    overflow-y: auto;
 }
 
 .choice-button {
     background-color: var(--bg-darker);
     border: 1px solid var(--border-subtle);
     color: var(--text-soft);
-    padding: 1rem 1.5rem;
+    padding: 0.9rem 1.25rem;
+    min-height: 44px;
     font-size: 1rem;
     font-family: inherit;
     cursor: pointer;
@@ -575,6 +599,12 @@ body {
 
 .choice-button:active {
     transform: translateY(1px);
+}
+
+.choice-button.continue-stage {
+    text-align: center;
+    letter-spacing: 0.06em;
+    border-color: #3a3a3a;
 }
 
 .choice-button:disabled {
@@ -765,102 +795,121 @@ body {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+    body {
+        overflow: hidden;
+        height: 100dvh;
+    }
+
+    #app {
+        min-height: 100dvh;
+        height: 100dvh;
+    }
+
     #game-container {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
-        padding: 0.5rem;
-        gap: 0.75rem;
-        min-height: 100vh;
-        max-height: 100vh;
+        grid-template-rows: auto 1fr;
+        padding: 0.5rem 0.5rem 0;
+        gap: 0.5rem;
+        min-height: 0;
+        max-height: calc(100dvh - 56px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
     }
     
-    .nav-toggle {
-        display: flex;
-    }
-    
-    .desktop-stats {
-        display: none;
-    }
-    
+    .desktop-stats,
     #journal-sidebar {
         display: none;
     }
+
+    .mobile-header-stats {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+    }
+
+    .mobile-header-stats strong {
+        color: var(--text-soft);
+        font-weight: normal;
+    }
     
     #game-header {
-        padding: 0.75rem 0;
+        padding: 0.6rem 0.25rem 0.75rem;
         flex-shrink: 0;
     }
     
     #game-title {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
     }
     
     #episode-title {
+        font-size: 0.78rem;
+    }
+    
+    #game-content {
+        grid-column: 1;
+        grid-row: 2;
+        max-height: none;
+        height: 100%;
+        gap: 0;
+        overflow: hidden;
+        padding-bottom: 0.25rem;
+    }
+
+    #room-stage {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        padding: 0;
+        border: none;
+        background: var(--bg-dark);
+        border-radius: 0;
+    }
+
+    .room-stage-frame {
+        border-radius: 0;
+        max-height: 28vh;
+    }
+
+    #room-stage .room-image {
+        max-height: 28vh;
+        height: 28vh;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    #room-stage .location {
+        padding: 0.45rem 0.75rem;
+        margin: 0;
+        background: var(--bg-darker);
+        border-bottom: 1px solid var(--border-subtle);
         font-size: 0.85rem;
     }
-    
-    #game-content {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        overflow: hidden;
-        min-height: 0;
-    }
-    
-    #game-content {
-        max-height: calc(100vh - 200px);
-        gap: 0.5rem;
-    }
-    
-    #scene-display {
-        padding: 0.75rem;
-        font-size: 0.9rem;
-        line-height: 1.5;
-        overflow-y: auto;
+
+    #scene-scroll {
         flex: 1 1 0;
-        min-height: 0;
-        max-height: 45vh;
+        padding: 0.65rem 0.15rem 0.5rem;
+        gap: 0.65rem;
+        -webkit-overflow-scrolling: touch;
     }
-    
-    .room-image,
-    .ending-image {
-        max-height: 20vh;
-        margin-bottom: 0.75rem;
+
+    #scene-narrative {
+        padding: 0.85rem 0.9rem;
+        font-size: 0.92rem;
+        line-height: 1.55;
     }
-    
-    .character-portrait {
-        max-width: 150px;
-        max-height: 180px;
-    }
-    
-    .character-portrait-modal {
-        max-width: 200px;
-        max-height: 250px;
-    }
-    
-    #profiles-content .character-portrait {
-        max-width: 100px;
-        max-height: 120px;
-    }
-    
+
     #choices-container {
-        max-height: 35vh;
-        gap: 0.5rem;
-    }
-    
-    #choices-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        flex: 0 0 auto;
-        max-height: 50vh;
-        overflow-y: auto;
+        gap: 0.45rem;
+        padding-bottom: 0.25rem;
     }
     
     .choice-button {
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
+        padding: 0.85rem 1rem;
+        font-size: 0.92rem;
     }
     
     #modal-content {
@@ -869,49 +918,84 @@ body {
     }
     
     .ending-image {
-        max-height: 60vh;
+        max-height: 45vh;
         width: 100%;
         margin-bottom: 1rem;
+        object-fit: contain;
     }
     
     .ending-scene {
-        min-height: calc(100vh - 100px);
+        min-height: auto;
         padding: 0.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
     }
     
     .ending-text {
         font-size: 0.9rem;
         line-height: 1.6;
-        padding: 0;
-        width: 100%;
-    }
-    
-    #scene-display.ending-scene {
-        max-height: 100%;
-        overflow: visible;
     }
     
     .mobile-panel {
         padding: 1.5rem;
-        max-height: 90vh;
+        max-height: 85vh;
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
     }
-    
-    #scene-display h2 {
-        font-size: 1.1rem;
-        margin-bottom: 0.75rem;
+
+    .mobile-bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 90;
+        background: var(--bg-darker);
+        border-top: 1px solid var(--border-subtle);
+        padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
     }
-    
-    #scene-display p {
-        margin-bottom: 0.75rem;
+
+    .bottom-nav-btn {
+        appearance: none;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-family: inherit;
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        min-height: 48px;
+        padding: 0.5rem 0.25rem;
+        cursor: pointer;
+    }
+
+    .bottom-nav-btn:active,
+    .bottom-nav-btn:focus-visible {
+        color: var(--text-soft);
+        outline: none;
+    }
+
+    body.ending-active .mobile-bottom-nav {
+        display: none;
+    }
+
+    body.ending-active #game-container {
+        max-height: 100dvh;
     }
 }
 
 /* Utility Classes */
 .hidden {
     display: none !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
 
 .text-center {
