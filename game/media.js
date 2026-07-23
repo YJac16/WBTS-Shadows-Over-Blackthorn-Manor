@@ -68,7 +68,7 @@ export const AUDIO_REGISTRY = {
     sfx_thunder: '/assets/sounds/sfx/thunder.mp3'
 };
 
-const MYSTERY_VOLUME = 0.22;
+const MYSTERY_SOFT_FACTOR = 0.45; // volume * factor ≈ soft bed (0.5 * 0.45 ≈ 0.22)
 const NORMAL_RATE = 1.0;
 const URGENT_RATE = 1.3;
 const URGENT_TIME_THRESHOLD = 10;
@@ -77,7 +77,7 @@ const URGENT_TIME_THRESHOLD = 10;
  * Media state
  */
 const mediaState = {
-    audioEnabled: true, // default on after unlock; user can mute in settings
+    audioEnabled: true,
     mysteryMusic: null,
     musicUnlocked: false,
     gamePlaying: false,
@@ -86,6 +86,22 @@ const mediaState = {
     currentRoomAudio: null,
     volume: 0.5
 };
+
+function mysteryPlaybackVolume() {
+    return Math.max(0, Math.min(1, mediaState.volume * MYSTERY_SOFT_FACTOR));
+}
+
+function applyVolumeToPlayingAudio() {
+    if (mediaState.mysteryMusic) {
+        mediaState.mysteryMusic.volume = mysteryPlaybackVolume();
+    }
+    if (mediaState.currentAmbient) {
+        mediaState.currentAmbient.volume = mediaState.volume;
+    }
+    if (mediaState.currentRoomAudio) {
+        mediaState.currentRoomAudio.volume = mediaState.volume * 0.7;
+    }
+}
 
 export function isAudioSupported() {
     return typeof Audio !== 'undefined';
@@ -112,6 +128,23 @@ export function setAudioEnabled(enabled) {
             syncMysteryMusicTempo(mediaState.lastTimeRemaining);
         }
     }
+}
+
+/**
+ * @returns {number} 0–1 master volume
+ */
+export function getVolume() {
+    return mediaState.volume;
+}
+
+/**
+ * Set master volume (0–1) and apply to playing tracks
+ * @param {number} value
+ */
+export function setVolume(value) {
+    const v = Number(value);
+    mediaState.volume = Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : mediaState.volume;
+    applyVolumeToPlayingAudio();
 }
 
 /**
@@ -160,7 +193,7 @@ export function startMysteryMusic() {
 
     const audio = new Audio(audioPath);
     audio.loop = true;
-    audio.volume = MYSTERY_VOLUME;
+    audio.volume = mysteryPlaybackVolume();
     audio.playbackRate = NORMAL_RATE;
     audio.play().catch(() => {
         // Autoplay blocked until user gesture

@@ -8,33 +8,10 @@
 import { gameState, isWeaponConsistentWithAutopsy } from './state.js';
 import { getEnding, suspects } from './scenes.js';
 import { getCluesSupporting, getCluesContradicting } from './clues.js';
-import { getAudioEnabled, setAudioEnabled, getImagePath, syncMysteryMusicTempo, stopMysteryMusic, setGamePlaying } from './media.js';
+import { getAudioEnabled, setAudioEnabled, getVolume, setVolume, getImagePath, syncMysteryMusicTempo, stopMysteryMusic, setGamePlaying } from './media.js';
 
 // UI State
 let currentPanel = null;
-/** @type {'staging' | 'locked'} */
-let uiPhase = 'locked';
-let lastActions = [];
-let lastActionHandler = null;
-let lastSceneData = null;
-
-/**
- * Begin description-first stage beat (hide image + real choices)
- */
-export function beginRoomStaging() {
-    uiPhase = 'staging';
-}
-
-/**
- * Lock into room view with sticky image + choices
- */
-export function lockRoomView() {
-    uiPhase = 'locked';
-}
-
-export function getUiPhase() {
-    return uiPhase;
-}
 
 /**
  * Eleanor portrait by role in the active scenario
@@ -61,8 +38,8 @@ function getEleanorPortraitPath() {
  * Initialize UI
  */
 export function initUI() {
-    // Bottom nav + any remaining data-panel buttons
-    document.querySelectorAll('.bottom-nav-btn, .nav-button[data-panel]').forEach(button => {
+    // Bottom nav, desktop settings, and any data-panel buttons
+    document.querySelectorAll('.bottom-nav-btn, [data-panel]').forEach(button => {
         button.addEventListener('click', (e) => {
             const panel = e.currentTarget.dataset.panel;
             if (panel) {
@@ -156,22 +133,13 @@ export function renderScene(sceneData) {
     const roomId = gameState.currentLocation || 'grandHall';
     const roomImage = getImagePath(`room_${roomId}`);
 
-    lastSceneData = sceneData || { name: locationName, description };
-
     if (narrative) {
-        narrative.classList.toggle('staging', uiPhase === 'staging');
-        if (uiPhase === 'staging') {
-            narrative.innerHTML = `
-                <div class="location">${locationName}</div>
-                <p>${description}</p>
-            `;
-        } else {
-            narrative.innerHTML = `<p>${description}</p>`;
-        }
+        narrative.classList.remove('staging');
+        narrative.innerHTML = `<p>${description}</p>`;
     }
 
     if (roomStage && stageImage && stageName) {
-        if (uiPhase === 'locked' && roomImage) {
+        if (roomImage) {
             roomStage.classList.remove('is-hidden');
             roomStage.setAttribute('aria-hidden', 'false');
             stageImage.src = roomImage;
@@ -181,7 +149,7 @@ export function renderScene(sceneData) {
             roomStage.classList.add('is-hidden');
             roomStage.setAttribute('aria-hidden', 'true');
             stageImage.removeAttribute('src');
-            stageName.textContent = '';
+            stageName.textContent = locationName;
         }
     }
 }
@@ -196,24 +164,8 @@ export function renderChoices(actions, onActionClick) {
     if (!choicesContainer) {
         return;
     }
-
-    lastActions = actions || [];
-    lastActionHandler = onActionClick;
     
     choicesContainer.innerHTML = '';
-
-    if (uiPhase === 'staging') {
-        const continueBtn = document.createElement('button');
-        continueBtn.className = 'choice-button continue-stage';
-        continueBtn.textContent = 'Continue';
-        continueBtn.addEventListener('click', () => {
-            lockRoomView();
-            renderScene(lastSceneData || { name: 'Grand Hall', description: '' });
-            renderChoices(lastActions, lastActionHandler);
-        });
-        choicesContainer.appendChild(continueBtn);
-        return;
-    }
     
     if (!actions || actions.length === 0) {
         choicesContainer.innerHTML = '<p class="text-center">No actions available.</p>';
@@ -597,6 +549,7 @@ function renderProfilesPanel(container, suspectId = null) {
  */
 function renderSettingsPanel(container) {
     const audioEnabled = getAudioEnabled();
+    const volumePct = Math.round(getVolume() * 100);
     
     container.innerHTML = `
         <h2>Settings</h2>
@@ -605,14 +558,37 @@ function renderSettingsPanel(container) {
                 <input type="checkbox" id="audio-toggle" ${audioEnabled ? 'checked' : ''}>
                 <span>Enable Audio</span>
             </label>
-            <p class="settings-note">Audio is optional and can be muted at any time.</p>
+            <p class="settings-note">Turn sound off completely, or adjust volume below.</p>
+        </div>
+        <div class="settings-section">
+            <label class="settings-volume" for="volume-slider">
+                <span>Volume</span>
+                <span id="volume-value">${volumePct}%</span>
+            </label>
+            <input type="range" id="volume-slider" min="0" max="100" value="${volumePct}" ${audioEnabled ? '' : 'disabled'}>
         </div>
     `;
     
     const audioToggle = document.getElementById('audio-toggle');
+    const volumeSlider = document.getElementById('volume-slider');
+    const volumeValue = document.getElementById('volume-value');
+
     if (audioToggle) {
         audioToggle.addEventListener('change', (e) => {
             setAudioEnabled(e.target.checked);
+            if (volumeSlider) {
+                volumeSlider.disabled = !e.target.checked;
+            }
+        });
+    }
+
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+            const pct = Number(e.target.value);
+            setVolume(pct / 100);
+            if (volumeValue) {
+                volumeValue.textContent = `${pct}%`;
+            }
         });
     }
 }

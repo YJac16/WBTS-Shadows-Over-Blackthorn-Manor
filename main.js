@@ -15,9 +15,7 @@ import {
     renderEnding,
     renderAccusationInterface,
     showExaminationResult,
-    showInterrogationResult,
-    beginRoomStaging,
-    lockRoomView
+    showInterrogationResult
 } from './game/ui.js';
 import { loadGame, saveGame, startNewGame, clearSave } from './game/save.js';
 import { unlockAndStartMysteryMusic, restartMysteryMusic, setGamePlaying, stopMysteryMusic } from './game/media.js';
@@ -33,17 +31,10 @@ function initGame(forceNew = false) {
     if (stats) stats.style.display = '';
     if (journal) journal.style.display = '';
 
-    let restored = false;
     if (forceNew) {
         startNewGame();
-        beginRoomStaging();
-    } else if (loadGame()) {
-        restored = true;
-        // Refresh mid-run: skip stage beat so progress isn't blocked
-        lockRoomView();
-    } else {
+    } else if (!loadGame()) {
         startNewGame();
-        beginRoomStaging();
     }
 
     if (gameState.gameOver) {
@@ -55,7 +46,6 @@ function initGame(forceNew = false) {
     }
 
     updateUI();
-    return restored;
 }
 
 /**
@@ -118,9 +108,7 @@ function handleAction(action) {
     
     switch (action.type) {
         case 'navigate':
-            if (navigateToLocation(action.target)) {
-                beginRoomStaging();
-            }
+            navigateToLocation(action.target);
             saveGame();
             updateUI();
             break;
