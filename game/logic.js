@@ -67,9 +67,13 @@ export function examineObject(objectId) {
     gameState.examinedObjects.add(objectId);
     
     // Check if examining the body (unlocks autopsy)
-    if (objectId === 'body' && !gameState.autopsyUnlocked && gameState.activeScenario) {
-        unlockAutopsy(); // Uses scenario's autopsyText
-        increaseSuspicion(10, 'examine_body'); // Examining body raises suspicion significantly
+    let autopsyText = null;
+    if (objectId === 'body' && gameState.activeScenario) {
+        if (!gameState.autopsyUnlocked) {
+            unlockAutopsy();
+            increaseSuspicion(10, 'examine_body');
+        }
+        autopsyText = gameState.activeScenario.autopsyText || null;
     }
     
     // Track if a weapon was found during this examination
@@ -105,7 +109,8 @@ export function examineObject(objectId) {
         name: obj.name,
         description: obj.description,
         clue: obj.clue,
-        foundWeapon: foundWeapon
+        foundWeapon: foundWeapon,
+        autopsyText: autopsyText
     };
 }
 

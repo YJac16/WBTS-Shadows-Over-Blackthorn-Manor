@@ -24,6 +24,47 @@ const CULPRIT_CLOSERS = {
 };
 
 /**
+ * Spoken lead lines keyed by scenario then suspect — clearer than raw notes alone
+ */
+const DIALOGUE_LEADS = {
+    wife_poison: {
+        eleanor: 'If you are looking for poison in this house, look carefully — but do not assume the widow poured it.',
+        victor: 'Poison is a household weapon. A business quarrel ends with raised voices, not a silent cup.',
+        thomas: 'Lady Eleanor made his drink that night. I remember because it was so unusual.',
+        doctor: 'No struggle. No wounds. Only what he swallowed. He was poisoned — that much is medical fact.',
+        lydia: 'I saw her carry a tray to the study. Whatever was in that cup... I wish I had looked closer.'
+    },
+    victor_sharp: {
+        eleanor: 'Victor stormed out after shouting about the accounts. Charles meant to cut him off.',
+        victor: 'We argued numbers, nothing else. A letter opener is an office tool — not proof of murder.',
+        thomas: 'Shouting, then metal scraping. Then quiet. Something sharp was used in that room.',
+        doctor: 'These are stab wounds from a slender blade — personal, not surgical. Find that blade.',
+        lydia: 'Victor begged for one more day. Charles would not give it. That is when the shouting started.'
+    },
+    gardener_blunt: {
+        eleanor: 'Charles was going to dismiss staff. Thomas knew his place was next — fear makes people reckless.',
+        victor: 'Thomas hovered by the study with something dark in his grip. Call it a tool if you like.',
+        thomas: 'The floor was wet. He fell. A heavy poker means nothing — accidents happen.',
+        doctor: 'The skull was struck from behind with force. A fall does not do this. Look for a heavy iron weapon.',
+        lydia: 'Thomas stood outside the study holding something long. I told myself it was gardening work.'
+    },
+    doctor_precision: {
+        eleanor: 'Charles kept papers about medical malpractice locked away. He was ready to expose someone.',
+        victor: 'Whitlock\'s reputation was cracking. Charles said he would report it — no more covering up.',
+        thomas: 'The doctor stayed alone with Charles after we left. Only a physician would make a cut that neat.',
+        doctor: 'Precision is my profession. That does not make every precise wound mine.',
+        lydia: 'He arrived early with his bag, calm as a house call. Looking back, that calm frightens me.'
+    },
+    maid_knife: {
+        eleanor: 'Lydia was to be dismissed for theft. Charles would not keep a thief under this roof.',
+        victor: 'A servant\'s secret can cut deep. Charles was angry about missing silver — and about Lydia.',
+        thomas: 'She left the kitchen late, wiping her hands, crying. A kitchen knife was missing from the block.',
+        doctor: 'These cuts are frantic and domestic — a kitchen blade, not a scalpel. Ask who works the kitchen.',
+        lydia: 'I serve meals. I do not steal. And I would never... I need you to believe me.'
+    }
+};
+
+/**
  * Get dialogue for a suspect based on active scenario
  * @param {string} suspectId
  * @returns {object}
@@ -40,11 +81,13 @@ export function getBestDialogue(suspectId) {
 
     const scenario = gameState.activeScenario;
     const isCulprit = suspectId === scenario.culprit;
-    const narrativeNote = scenario.narrativeNotes?.[suspectId] || '';
+    const lead = DIALOGUE_LEADS[scenario.id]?.[suspectId]
+        || scenario.narrativeNotes?.[suspectId]
+        || '';
 
     let text = opener;
-    if (narrativeNote) {
-        text += ' ' + narrativeNote;
+    if (lead) {
+        text += ' ' + lead;
     }
     if (isCulprit) {
         text += ' ' + (CULPRIT_CLOSERS[suspectId] || '');
@@ -53,7 +96,7 @@ export function getBestDialogue(suspectId) {
     let suspicionIncrease = 5;
     if (isCulprit) {
         suspicionIncrease = 15;
-    } else if (narrativeNote) {
+    } else if (lead) {
         suspicionIncrease = 8;
     }
 
@@ -77,13 +120,15 @@ export function updateProfileFromDialogue(suspectId, dialogue) {
     const scenario = gameState.activeScenario;
     const isCulprit = suspectId === scenario.culprit;
     const narrativeNote = scenario.narrativeNotes?.[suspectId] || '';
+    const lead = DIALOGUE_LEADS[scenario.id]?.[suspectId] || '';
+    const combined = `${narrativeNote} ${lead} ${dialogue?.text || ''}`;
 
     if (isCulprit && !gameState.knownCharacters[suspectId].motives.includes(scenario.motive)) {
         gameState.knownCharacters[suspectId].motives.push(scenario.motive);
     }
 
-    const opportunityHints = /alone|prepared|with Charles|arrive|tray|study|dismiss|staff|bag|knife|drink|shouting|hovering|theft|silver/i;
-    const hasOpportunityHint = opportunityHints.test(narrativeNote) || isCulprit;
+    const opportunityHints = /alone|prepared|drink|tray|study|dismiss|staff|bag|knife|shouting|hovering|theft|silver|scalpel|poker|poison|blade|accounts|malpractice/i;
+    const hasOpportunityHint = opportunityHints.test(combined) || isCulprit;
 
     if (hasOpportunityHint) {
         let opportunity;

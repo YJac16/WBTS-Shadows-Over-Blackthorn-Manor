@@ -903,15 +903,17 @@ export function showExaminationResult(result) {
                 `;
             }
         }
-        // Check if this is the body - show autopsy image
+        // Check if this is the body - show autopsy image + scenario observation
         else if (result.name === 'Charles Blackthorn\'s Body' || result.name?.toLowerCase().includes('body')) {
             const autopsyImage = getImagePath('evidence_body');
-            if (autopsyImage) {
-                modalContent = `
-                    <img src="${autopsyImage}" alt="Autopsy Report" class="examination-image" />
-                    <div class="examination-text">${result.description}</div>
-                `;
-            }
+            const observation = result.description || '';
+            const autopsy = result.autopsyText || result.clue?.text || '';
+            modalContent = `
+                ${autopsyImage ? `<img src="${autopsyImage}" alt="Autopsy Report" class="examination-image" />` : ''}
+                <div class="examination-text"><strong>Body Examination</strong></div>
+                <div class="examination-text">${observation}</div>
+                ${autopsy ? `<div class="examination-text" style="margin-top: 1rem;"><strong>Autopsy Report</strong><br>${autopsy}</div>` : ''}
+            `;
         }
         // Check if this is the portrait object - show image
         else if (result.name === 'Family Portrait' || result.name?.toLowerCase().includes('portrait')) {

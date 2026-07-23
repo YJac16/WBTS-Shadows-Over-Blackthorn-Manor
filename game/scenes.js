@@ -150,7 +150,14 @@ export const objects = {
         id: 'body',
         name: 'Charles Blackthorn\'s Body',
         description: 'Charles Blackthorn, dead. His body shows signs of violence.',
-        clueId: 'body_examination'
+        clueId: 'body_examination',
+        getDescription: () => {
+            const scenario = gameState.activeScenario || gameState.solution;
+            if (scenario?.bodyObservation) {
+                return scenario.bodyObservation;
+            }
+            return 'Charles Blackthorn, dead. His body shows signs of violence.';
+        }
     },
     
     desk: {
@@ -329,9 +336,14 @@ export function getObject(objectId) {
     if (clueId) {
         clue = getClueById(clueId);
     }
+
+    const description = typeof obj.getDescription === 'function'
+        ? obj.getDescription()
+        : obj.description;
     
     return {
         ...obj,
+        description,
         clue: clue
     };
 }

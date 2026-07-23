@@ -191,16 +191,20 @@ export function getClueById(clueId) {
         let methodText = 'violence.';
         switch (scenario.causeOfDeath) {
             case 'poison':
-                methodText = 'internal poisoning. No external wounds visible.';
+                methodText = 'poisoning — no external wounds, only signs of something ingested, suggesting he was poisoned.';
                 break;
             case 'lacerations':
-                methodText = 'sharp-force trauma. Multiple lacerations suggest a stabbing.';
+                if (scenario.id === 'maid_knife') {
+                    methodText = 'frantic deep cuts consistent with a kitchen blade, suggesting a stabbing with a household knife.';
+                } else {
+                    methodText = 'sharp-force trauma and stab wounds, suggesting a deliberate stabbing with a slender blade.';
+                }
                 break;
             case 'blunt_force':
-                methodText = 'blunt-force trauma. Severe trauma to the skull.';
+                methodText = 'blunt-force trauma to the skull, suggesting a heavy iron instrument — not a simple fall.';
                 break;
             case 'precision_incision':
-                methodText = 'a precise surgical incision. The wound shows medical precision.';
+                methodText = 'a precise surgical incision, suggesting a scalpel used with medical training.';
                 break;
         }
 
