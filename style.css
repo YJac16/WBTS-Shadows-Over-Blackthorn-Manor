@@ -928,9 +928,9 @@ body.ending-active .play-again-button {
 
     #game-container {
         grid-template-columns: 1fr;
-        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
         padding: 0.45rem 0.55rem 0;
-        gap: 0.45rem;
+        gap: 0;
         height: calc(100dvh - 56px - env(safe-area-inset-bottom, 0px));
         max-height: calc(100dvh - 56px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
@@ -941,30 +941,15 @@ body.ending-active .play-again-button {
     #journal-sidebar {
         display: none !important;
     }
-    
-    #game-header {
-        padding: 0.35rem 0.15rem 0.45rem;
-        flex-shrink: 0;
-        border-bottom: none;
-    }
 
-    #game-header .header-text {
-        display: flex;
-        gap: 0.15rem;
-    }
-    
-    #game-title {
-        font-size: 0.95rem;
-        letter-spacing: 0.08em;
-    }
-    
-    #episode-title {
-        font-size: 0.78rem;
+    /* Free play space — title lives on the title screen */
+    #game-header {
+        display: none;
     }
     
     #game-content {
         grid-column: 1;
-        grid-row: 2;
+        grid-row: 1;
         max-height: none;
         height: 100%;
         gap: 0;
@@ -975,6 +960,7 @@ body.ending-active .play-again-button {
         border-radius: 2px;
     }
 
+    /* Even thirds: scene / description / choices */
     #room-stage {
         position: relative;
         top: auto;
@@ -983,17 +969,22 @@ body.ending-active .play-again-button {
         border: none;
         background: transparent;
         border-radius: 0;
-        flex: 0 0 auto;
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     .room-stage-frame {
         border-radius: 0;
-        max-height: 34vh;
+        flex: 1 1 0;
+        min-height: 0;
+        max-height: none;
     }
 
     #room-stage .room-image {
-        max-height: 34vh;
-        height: 34vh;
+        max-height: none;
+        height: 100%;
         width: 100%;
         object-fit: cover;
     }
@@ -1005,12 +996,13 @@ body.ending-active .play-again-button {
         border-bottom: 1px solid var(--border-subtle);
         font-size: 0.8rem;
         text-align: left;
+        flex-shrink: 0;
     }
 
     #scene-scroll {
-        flex: 1 1 0;
+        flex: 2 1 0;
         min-height: 0;
-        padding: 0.65rem 0.65rem 0.55rem;
+        padding: 0.55rem 0.65rem 0.55rem;
         gap: 0.55rem;
         overflow: hidden;
         display: flex;
@@ -1018,8 +1010,9 @@ body.ending-active .play-again-button {
     }
 
     #scene-narrative {
-        flex: 0 0 auto;
-        max-height: 28vh;
+        flex: 1 1 0;
+        min-height: 0;
+        max-height: none;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         padding: 0.15rem 0.15rem 0.15rem 0.7rem;
@@ -1032,12 +1025,15 @@ body.ending-active .play-again-button {
     }
 
     #choices-container {
-        flex: 1 1 auto;
-        gap: 0.4rem;
+        flex: 1 1 0;
+        gap: 0.45rem;
         padding-bottom: 0.1rem;
         min-height: 0;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .choice-button {
@@ -1046,6 +1042,7 @@ body.ending-active .play-again-button {
         min-height: 44px;
         background-color: var(--bg-dark);
         text-align: center;
+        flex-shrink: 0;
     }
     
     #modal-content {
@@ -1069,14 +1066,22 @@ body.ending-active .play-again-button {
         padding: 1rem 0.75rem;
         border-left: none;
         text-align: center;
+        flex: 1 1 auto;
     }
 
     body.ending-active #game-content {
         border: none;
         background: transparent;
+        grid-row: 1;
+    }
+
+    body.ending-active #scene-scroll {
+        flex: 1 1 auto;
     }
 
     body.ending-active #choices-container.ending-actions {
+        flex: 0 0 auto;
+        justify-content: flex-end;
         padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     }
     
@@ -1197,6 +1202,7 @@ body.ending-active .play-again-button {
     }
 
     body.ending-active #game-container {
+        grid-template-rows: minmax(0, 1fr);
         height: 100dvh;
         max-height: 100dvh;
     }
