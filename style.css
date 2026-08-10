@@ -538,10 +538,12 @@ body {
     width: 100%;
     max-width: 100%;
     height: auto;
+    max-height: 40vh;
     object-fit: contain;
     display: block;
     margin: 0 auto 1rem auto;
     border-radius: 2px;
+    flex-shrink: 0;
 }
 
 /* Ending scene styling */
@@ -597,10 +599,17 @@ body.ending-active #scene-narrative.ending-scene {
     -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
     text-align: center;
     padding: 1.25rem 1rem;
+}
+
+/* Center short endings; collapse when content overflows so top isn't clipped */
+body.ending-active #scene-narrative.ending-scene::before,
+body.ending-active #scene-narrative.ending-scene::after {
+    content: '';
+    flex: 1 1 0;
+    min-height: 0;
 }
 
 body.ending-active #choices-container.ending-actions {
