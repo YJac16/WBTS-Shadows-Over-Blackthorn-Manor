@@ -25,10 +25,6 @@
                     <div id="game-title">Whispers Before the Silence</div>
                     <div id="episode-title">Shadows Over Blackthorn Manor</div>
                 </div>
-                <div id="mobile-header-stats" class="mobile-header-stats" aria-live="polite">
-                    <span>Time <strong id="time-value">20</strong></span>
-                    <span>Suspicion <strong id="suspicion-value">0</strong></span>
-                </div>
             </header>
             
             <div id="game-stats" class="desktop-stats">
@@ -62,10 +58,21 @@
             </aside>
         </div>
 
-        <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Investigation">
-            <button type="button" class="bottom-nav-btn" data-panel="journal">Journal</button>
-            <button type="button" class="bottom-nav-btn" data-panel="profiles">Characters</button>
-            <button type="button" class="bottom-nav-btn" data-panel="settings">Settings</button>
+        <nav id="mobile-bottom-bar" class="mobile-bottom-bar" aria-label="Status">
+            <div class="bottom-stats" aria-live="polite">
+                <span class="bottom-stat">Time <strong id="time-value">20</strong></span>
+                <span class="bottom-stat">Suspicion <strong id="suspicion-value">0</strong></span>
+            </div>
+            <div class="bottom-menu">
+                <button type="button" id="bottom-menu-toggle" class="bottom-menu-toggle" aria-expanded="false" aria-controls="bottom-menu-panel" aria-haspopup="true">
+                    Menu
+                </button>
+                <div id="bottom-menu-panel" class="bottom-menu-panel" hidden role="menu">
+                    <button type="button" class="bottom-menu-item" role="menuitem" data-panel="journal">Journal</button>
+                    <button type="button" class="bottom-menu-item" role="menuitem" data-panel="profiles">Characters</button>
+                    <button type="button" class="bottom-menu-item" role="menuitem" data-panel="settings">Settings</button>
+                </div>
+            </div>
         </nav>
         
         <div id="mobile-panel-overlay" class="mobile-panel-overlay hidden">
