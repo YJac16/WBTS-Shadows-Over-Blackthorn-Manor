@@ -944,16 +944,20 @@ export function showExaminationResult(result) {
             if (weaponImage) {
                 modalContent = `
                     <img src="${weaponImage}" alt="${result.foundWeapon.name}" class="examination-image" />
-                    <div class="examination-text"><strong>Found: ${result.foundWeapon.name}</strong></div>
-                    <div class="examination-text">${result.foundWeapon.description}</div>
-                    ${result.description && result.description !== result.foundWeapon.description ? `<div class="examination-text" style="margin-top: 1rem;">${result.description}</div>` : ''}
+                    <div class="examination-section">
+                        <div class="examination-heading">Found: ${result.foundWeapon.name}</div>
+                        <div class="examination-text">${result.foundWeapon.description}</div>
+                        ${result.description && result.description !== result.foundWeapon.description ? `<div class="examination-text">${result.description}</div>` : ''}
+                    </div>
                 `;
             } else {
                 // Fallback if image not found
                 modalContent = `
-                    <div class="examination-text"><strong>Found: ${result.foundWeapon.name}</strong></div>
-                    <div class="examination-text">${result.foundWeapon.description}</div>
-                    ${result.description && result.description !== result.foundWeapon.description ? `<div class="examination-text" style="margin-top: 1rem;">${result.description}</div>` : ''}
+                    <div class="examination-section">
+                        <div class="examination-heading">Found: ${result.foundWeapon.name}</div>
+                        <div class="examination-text">${result.foundWeapon.description}</div>
+                        ${result.description && result.description !== result.foundWeapon.description ? `<div class="examination-text">${result.description}</div>` : ''}
+                    </div>
                 `;
             }
         }
@@ -964,9 +968,11 @@ export function showExaminationResult(result) {
             const autopsy = result.autopsyText || result.clue?.text || '';
             modalContent = `
                 ${autopsyImage ? `<img src="${autopsyImage}" alt="Autopsy Report" class="examination-image" />` : ''}
-                <div class="examination-text"><strong>Body Examination</strong></div>
-                <div class="examination-text">${observation}</div>
-                ${autopsy ? `<div class="examination-text" style="margin-top: 1rem;"><strong>Autopsy Report</strong><br>${autopsy}</div>` : ''}
+                <div class="examination-section">
+                    <div class="examination-heading">Body Examination</div>
+                    <div class="examination-text">${observation}</div>
+                </div>
+                ${autopsy ? `<div class="examination-section"><div class="examination-heading">Autopsy Report</div><div class="examination-text">${autopsy}</div></div>` : ''}
             `;
         }
         // Check if this is the portrait object - show image
