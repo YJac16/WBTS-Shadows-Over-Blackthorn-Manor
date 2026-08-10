@@ -439,7 +439,7 @@ body {
     overflow: hidden;
     border-radius: 2px;
     background: #000;
-    max-height: 22vh;
+    max-height: 30vh;
 }
 
 .room-stage-frame::after {
@@ -468,15 +468,15 @@ body {
 }
 
 #scene-narrative {
-    flex: 0 1 auto;
-    max-height: 22%;
-    overflow-y: auto;
+    flex: 0 0 auto;
+    max-height: none;
+    overflow: visible;
     background-color: var(--bg-darker);
-    padding: 0.65rem 0.85rem;
+    padding: 0.75rem 0.9rem;
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
-    font-size: 0.9rem;
-    line-height: 1.45;
+    font-size: 0.95rem;
+    line-height: 1.55;
 }
 
 #scene-narrative.staging {
@@ -526,8 +526,8 @@ body {
 .room-image {
     width: 100%;
     max-width: 100%;
-    height: 22vh;
-    max-height: 22vh;
+    height: 30vh;
+    max-height: 30vh;
     object-fit: cover;
     display: block;
     margin: 0 auto;
@@ -630,7 +630,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
 }
@@ -868,23 +868,24 @@ body {
     #game-container {
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(0, 1fr);
-        padding: 0.35rem 0.4rem 0;
-        gap: 0.35rem;
+        padding: 0.25rem 0.4rem 0;
+        gap: 0.25rem;
         height: calc(100dvh - 52px - env(safe-area-inset-bottom, 0px));
         max-height: calc(100dvh - 52px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
     }
     
-    .desktop-stats,
+    /* ID beats .desktop-stats — must hide by #game-stats or duplicates show */
+    #game-stats,
     #journal-sidebar {
-        display: none;
+        display: none !important;
     }
 
     .mobile-header-stats {
         display: flex;
         justify-content: center;
-        gap: 1rem;
-        margin-top: 0.35rem;
+        gap: 1.25rem;
+        margin-top: 0.2rem;
         font-size: 0.75rem;
         color: var(--text-muted);
         letter-spacing: 0.04em;
@@ -896,8 +897,12 @@ body {
     }
     
     #game-header {
-        padding: 0.35rem 0.2rem 0.45rem;
+        padding: 0.25rem 0.2rem 0.3rem;
         flex-shrink: 0;
+    }
+
+    #game-header .header-text {
+        display: none;
     }
     
     #game-title {
@@ -932,18 +937,18 @@ body {
 
     .room-stage-frame {
         border-radius: 0;
-        max-height: 20vh;
+        max-height: 36vh;
     }
 
     #room-stage .room-image {
-        max-height: 20vh;
-        height: 20vh;
+        max-height: 36vh;
+        height: 36vh;
         width: 100%;
         object-fit: cover;
     }
 
     #room-stage .location {
-        padding: 0.35rem 0.65rem;
+        padding: 0.3rem 0.65rem;
         margin: 0;
         background: var(--bg-darker);
         border-bottom: 1px solid var(--border-subtle);
@@ -953,21 +958,25 @@ body {
     #scene-scroll {
         flex: 1 1 0;
         min-height: 0;
-        padding: 0.45rem 0.1rem 0.35rem;
-        gap: 0.4rem;
+        padding: 0.4rem 0.1rem 0.3rem;
+        gap: 0.45rem;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     #scene-narrative {
-        flex: 0 1 auto;
-        max-height: 28%;
-        padding: 0.55rem 0.7rem;
-        font-size: 0.85rem;
-        line-height: 1.4;
+        flex: 0 0 auto;
+        max-height: 30vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.92rem;
+        line-height: 1.5;
     }
 
     #choices-container {
-        flex: 1 1 0;
+        flex: 1 1 auto;
         gap: 0.35rem;
         padding-bottom: 0.15rem;
         min-height: 0;
@@ -976,9 +985,9 @@ body {
     }
     
     .choice-button {
-        padding: 0.7rem 0.85rem;
+        padding: 0.65rem 0.85rem;
         font-size: 0.88rem;
-        min-height: 42px;
+        min-height: 40px;
     }
     
     #modal-content {
@@ -1051,6 +1060,117 @@ body {
         height: 100dvh;
         max-height: 100dvh;
     }
+}
+
+/* Title screen */
+#title-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    background-color: var(--bg-darker);
+    background-image:
+        linear-gradient(to bottom, rgba(5, 5, 5, 0.72), rgba(5, 5, 5, 0.88)),
+        url('/Grand Hall (Opening Scene).jpg');
+    background-size: cover;
+    background-position: center;
+    text-align: center;
+}
+
+#title-screen.hidden {
+    display: none;
+}
+
+.title-screen-inner {
+    max-width: 28rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    animation: titleFadeIn 1.1s ease both;
+}
+
+.title-series {
+    font-size: clamp(1.35rem, 5.5vw, 2rem);
+    letter-spacing: 0.12em;
+    line-height: 1.25;
+    color: var(--text-soft);
+    text-transform: none;
+}
+
+.title-episode {
+    font-size: clamp(0.95rem, 3.6vw, 1.2rem);
+    font-style: italic;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 1.25rem;
+}
+
+.title-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    width: 100%;
+    max-width: 16rem;
+    margin-top: 0.5rem;
+}
+
+.title-btn {
+    appearance: none;
+    width: 100%;
+    background-color: rgba(20, 20, 20, 0.85);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-soft);
+    font-family: inherit;
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    padding: 0.85rem 1.25rem;
+    min-height: 48px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.title-btn:hover,
+.title-btn:focus-visible {
+    background-color: var(--accent-subtle);
+    border-color: var(--text-muted);
+    outline: none;
+}
+
+.title-btn-primary {
+    border-color: #3a3a3a;
+}
+
+.title-btn-secondary {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+@keyframes titleFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body.title-active #game-container,
+body.title-active .mobile-bottom-nav {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.ending-active #game-stats,
+body.ending-active #journal-sidebar {
+    display: none !important;
 }
 
 /* Utility Classes */

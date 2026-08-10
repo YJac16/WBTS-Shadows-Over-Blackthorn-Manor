@@ -6,8 +6,19 @@
     <title>Whispers Before the Silence: Shadows Over Blackthorn Manor</title>
     <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body class="title-active">
     <div id="app">
+        <div id="title-screen" role="dialog" aria-labelledby="title-series" aria-modal="true">
+            <div class="title-screen-inner">
+                <h1 id="title-series" class="title-series">Whispers Before the Silence</h1>
+                <p id="title-episode" class="title-episode">Shadows Over Blackthorn Manor</p>
+                <div class="title-actions">
+                    <button type="button" id="title-begin-btn" class="title-btn title-btn-primary">Begin Investigation</button>
+                    <button type="button" id="title-continue-btn" class="title-btn title-btn-secondary hidden">Continue</button>
+                </div>
+            </div>
+        </div>
+
         <div id="game-container">
             <header id="game-header">
                 <div class="header-text">
