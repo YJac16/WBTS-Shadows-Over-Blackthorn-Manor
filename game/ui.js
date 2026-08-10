@@ -124,6 +124,7 @@ export function renderScene(sceneData) {
     const stageImage = document.getElementById('room-stage-image');
     const stageName = document.getElementById('room-stage-name');
     const narrative = document.getElementById('scene-narrative');
+    const choicesEl = document.getElementById('choices-container');
 
     const locationName = sceneData?.name
         || sceneData?.location?.name
@@ -134,8 +135,11 @@ export function renderScene(sceneData) {
     const roomImage = getImagePath(`room_${roomId}`);
 
     if (narrative) {
-        narrative.classList.remove('staging');
+        narrative.classList.remove('staging', 'ending-scene');
         narrative.innerHTML = `<p>${description}</p>`;
+    }
+    if (choicesEl) {
+        choicesEl.classList.remove('ending-actions');
     }
 
     if (roomStage && stageImage && stageName) {
@@ -682,6 +686,7 @@ export function renderEnding(endingId) {
     
     if (narrative) {
         narrative.classList.remove('staging');
+        narrative.classList.add('ending-scene');
         narrative.innerHTML = `
             ${endingImage ? `<img src="${endingImage}" alt="${ending.title}" class="ending-image" />` : ''}
             <h2>${ending.title}</h2>
@@ -691,13 +696,14 @@ export function renderEnding(endingId) {
     
     if (choicesContainer) {
         const playAgainButton = document.createElement('button');
-        playAgainButton.className = 'choice-button';
+        playAgainButton.className = 'choice-button play-again-button';
         playAgainButton.textContent = 'Play Again';
         playAgainButton.addEventListener('click', () => {
             document.body.classList.remove('ending-active');
             window.dispatchEvent(new CustomEvent('playAgain'));
         });
         choicesContainer.innerHTML = '';
+        choicesContainer.classList.add('ending-actions');
         choicesContainer.appendChild(playAgainButton);
     }
     

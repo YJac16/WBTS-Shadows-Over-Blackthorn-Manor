@@ -561,6 +561,62 @@ body {
     max-width: 800px;
 }
 
+/* Full-viewport ending title card (good + bad) */
+body.ending-active #game-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+body.ending-active #game-header {
+    grid-column: 1;
+}
+
+body.ending-active #game-content {
+    grid-column: 1;
+    grid-row: 2;
+    height: 100%;
+    min-height: 0;
+}
+
+body.ending-active #scene-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow: hidden;
+}
+
+body.ending-active #scene-narrative.ending-scene {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1.25rem 1rem;
+}
+
+body.ending-active #choices-container.ending-actions {
+    flex: 0 0 auto;
+    margin-top: auto;
+    overflow: visible;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+body.ending-active .play-again-button {
+    width: 100%;
+    text-align: center;
+    letter-spacing: 0.06em;
+    min-height: 48px;
+}
+
 .character-portrait-modal {
     width: 100%;
     max-width: 250px;
@@ -1005,6 +1061,14 @@ body {
     .ending-scene {
         min-height: auto;
         padding: 0.35rem;
+    }
+
+    body.ending-active #scene-narrative.ending-scene {
+        padding: 1rem 0.75rem;
+    }
+
+    body.ending-active #choices-container.ending-actions {
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     }
     
     .ending-text {
