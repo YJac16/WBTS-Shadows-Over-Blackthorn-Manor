@@ -38,15 +38,44 @@ function getEleanorPortraitPath() {
  * Initialize UI
  */
 export function initUI() {
-    // Bottom nav, desktop settings, and any data-panel buttons
-    document.querySelectorAll('.bottom-nav-btn, [data-panel]').forEach(button => {
+    // Desktop settings and panel triggers (including bottom menu items)
+    document.querySelectorAll('[data-panel]').forEach(button => {
         button.addEventListener('click', (e) => {
             const panel = e.currentTarget.dataset.panel;
             if (panel) {
+                closeBottomMenu();
                 showMobilePanel(panel);
             }
         });
     });
+
+    const menuToggle = document.getElementById('bottom-menu-toggle');
+    const menuPanel = document.getElementById('bottom-menu-panel');
+    if (menuToggle && menuPanel) {
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = menuPanel.hasAttribute('hidden');
+            if (open) {
+                openBottomMenu();
+            } else {
+                closeBottomMenu();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const menu = document.querySelector('.bottom-menu');
+            if (!menu || menu.contains(e.target)) {
+                return;
+            }
+            closeBottomMenu();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeBottomMenu();
+            }
+        });
+    }
     
     const panelClose = document.getElementById('panel-close');
     const panelOverlay = document.getElementById('mobile-panel-overlay');
@@ -64,6 +93,28 @@ export function initUI() {
             }
         });
     }
+}
+
+function openBottomMenu() {
+    const menuToggle = document.getElementById('bottom-menu-toggle');
+    const menuPanel = document.getElementById('bottom-menu-panel');
+    if (!menuToggle || !menuPanel) {
+        return;
+    }
+    menuPanel.removeAttribute('hidden');
+    menuToggle.setAttribute('aria-expanded', 'true');
+    menuToggle.classList.add('is-open');
+}
+
+function closeBottomMenu() {
+    const menuToggle = document.getElementById('bottom-menu-toggle');
+    const menuPanel = document.getElementById('bottom-menu-panel');
+    if (!menuToggle || !menuPanel) {
+        return;
+    }
+    menuPanel.setAttribute('hidden', '');
+    menuToggle.setAttribute('aria-expanded', 'false');
+    menuToggle.classList.remove('is-open');
 }
 
 /**

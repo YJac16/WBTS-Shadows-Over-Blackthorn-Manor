@@ -65,10 +65,6 @@ body {
     gap: 0.25rem;
 }
 
-.mobile-header-stats {
-    display: none;
-}
-
 .nav-toggle {
     display: none;
 }
@@ -151,8 +147,8 @@ body {
     background-color: var(--accent-subtle);
 }
 
-/* Bottom nav — mobile only */
-.mobile-bottom-nav {
+/* Bottom status bar — mobile only */
+.mobile-bottom-bar {
     display: none;
 }
 
@@ -933,10 +929,10 @@ body.ending-active .play-again-button {
     #game-container {
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(0, 1fr);
-        padding: 0.25rem 0.4rem 0;
-        gap: 0.25rem;
-        height: calc(100dvh - 52px - env(safe-area-inset-bottom, 0px));
-        max-height: calc(100dvh - 52px - env(safe-area-inset-bottom, 0px));
+        padding: 0.45rem 0.55rem 0;
+        gap: 0.45rem;
+        height: calc(100dvh - 56px - env(safe-area-inset-bottom, 0px));
+        max-height: calc(100dvh - 56px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
     }
     
@@ -945,38 +941,25 @@ body.ending-active .play-again-button {
     #journal-sidebar {
         display: none !important;
     }
-
-    .mobile-header-stats {
-        display: flex;
-        justify-content: center;
-        gap: 1.25rem;
-        margin-top: 0.2rem;
-        font-size: 0.75rem;
-        color: var(--text-muted);
-        letter-spacing: 0.04em;
-    }
-
-    .mobile-header-stats strong {
-        color: var(--text-soft);
-        font-weight: normal;
-    }
     
     #game-header {
-        padding: 0.25rem 0.2rem 0.3rem;
+        padding: 0.35rem 0.15rem 0.45rem;
         flex-shrink: 0;
+        border-bottom: none;
     }
 
     #game-header .header-text {
-        display: none;
+        display: flex;
+        gap: 0.15rem;
     }
     
     #game-title {
-        font-size: 0.88rem;
-        letter-spacing: 0.06em;
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
     }
     
     #episode-title {
-        font-size: 0.72rem;
+        font-size: 0.78rem;
     }
     
     #game-content {
@@ -987,6 +970,9 @@ body.ending-active .play-again-button {
         gap: 0;
         overflow: hidden;
         padding-bottom: 0;
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-subtle);
+        border-radius: 2px;
     }
 
     #room-stage {
@@ -995,36 +981,37 @@ body.ending-active .play-again-button {
         z-index: 5;
         padding: 0;
         border: none;
-        background: var(--bg-dark);
+        background: transparent;
         border-radius: 0;
         flex: 0 0 auto;
     }
 
     .room-stage-frame {
         border-radius: 0;
-        max-height: 36vh;
+        max-height: 34vh;
     }
 
     #room-stage .room-image {
-        max-height: 36vh;
-        height: 36vh;
+        max-height: 34vh;
+        height: 34vh;
         width: 100%;
         object-fit: cover;
     }
 
     #room-stage .location {
-        padding: 0.3rem 0.65rem;
+        padding: 0.35rem 0.75rem;
         margin: 0;
-        background: var(--bg-darker);
+        background: transparent;
         border-bottom: 1px solid var(--border-subtle);
         font-size: 0.8rem;
+        text-align: left;
     }
 
     #scene-scroll {
         flex: 1 1 0;
         min-height: 0;
-        padding: 0.4rem 0.1rem 0.3rem;
-        gap: 0.45rem;
+        padding: 0.65rem 0.65rem 0.55rem;
+        gap: 0.55rem;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -1032,27 +1019,33 @@ body.ending-active .play-again-button {
 
     #scene-narrative {
         flex: 0 0 auto;
-        max-height: 30vh;
+        max-height: 28vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 0.65rem 0.75rem;
+        padding: 0.15rem 0.15rem 0.15rem 0.7rem;
         font-size: 0.92rem;
-        line-height: 1.5;
+        line-height: 1.55;
+        background: transparent;
+        border: none;
+        border-left: 2px solid #2e2e2e;
+        border-radius: 0;
     }
 
     #choices-container {
         flex: 1 1 auto;
-        gap: 0.35rem;
-        padding-bottom: 0.15rem;
+        gap: 0.4rem;
+        padding-bottom: 0.1rem;
         min-height: 0;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
     
     .choice-button {
-        padding: 0.65rem 0.85rem;
-        font-size: 0.88rem;
-        min-height: 40px;
+        padding: 0.75rem 0.9rem;
+        font-size: 0.9rem;
+        min-height: 44px;
+        background-color: var(--bg-dark);
+        text-align: center;
     }
     
     #modal-content {
@@ -1074,6 +1067,13 @@ body.ending-active .play-again-button {
 
     body.ending-active #scene-narrative.ending-scene {
         padding: 1rem 0.75rem;
+        border-left: none;
+        text-align: center;
+    }
+
+    body.ending-active #game-content {
+        border: none;
+        background: transparent;
     }
 
     body.ending-active #choices-container.ending-actions {
@@ -1091,9 +1091,11 @@ body.ending-active .play-again-button {
         padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
     }
 
-    .mobile-bottom-nav {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
+    .mobile-bottom-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
         position: fixed;
         left: 0;
         right: 0;
@@ -1101,31 +1103,96 @@ body.ending-active .play-again-button {
         z-index: 90;
         background: var(--bg-darker);
         border-top: 1px solid var(--border-subtle);
-        padding: 0.2rem 0.25rem calc(0.2rem + env(safe-area-inset-bottom, 0px));
-        height: calc(52px + env(safe-area-inset-bottom, 0px));
+        padding: 0.35rem 0.75rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+        min-height: calc(56px + env(safe-area-inset-bottom, 0px));
     }
 
-    .bottom-nav-btn {
-        appearance: none;
-        background: transparent;
-        border: none;
+    .bottom-stats {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
         color: var(--text-muted);
-        font-family: inherit;
-        font-size: 0.72rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        min-height: 44px;
-        padding: 0.35rem 0.2rem;
-        cursor: pointer;
+        min-width: 0;
     }
 
-    .bottom-nav-btn:active,
-    .bottom-nav-btn:focus-visible {
+    .bottom-stat strong {
         color: var(--text-soft);
+        font-weight: normal;
+        margin-left: 0.2rem;
+    }
+
+    .bottom-menu {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .bottom-menu-toggle {
+        appearance: none;
+        background: var(--bg-dark);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-soft);
+        font-family: inherit;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        min-height: 40px;
+        padding: 0.4rem 0.85rem;
+        cursor: pointer;
+        border-radius: 2px;
+    }
+
+    .bottom-menu-toggle.is-open,
+    .bottom-menu-toggle:focus-visible {
+        border-color: var(--text-muted);
         outline: none;
     }
 
-    body.ending-active .mobile-bottom-nav {
+    .bottom-menu-panel {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 0.45rem);
+        min-width: 10.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        padding: 0.35rem;
+        background: var(--bg-darker);
+        border: 1px solid var(--border-subtle);
+        border-radius: 2px;
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
+        z-index: 95;
+    }
+
+    .bottom-menu-panel[hidden] {
+        display: none;
+    }
+
+    .bottom-menu-item {
+        appearance: none;
+        width: 100%;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--text-soft);
+        font-family: inherit;
+        font-size: 0.88rem;
+        letter-spacing: 0.04em;
+        text-align: left;
+        min-height: 44px;
+        padding: 0.55rem 0.75rem;
+        cursor: pointer;
+        border-radius: 2px;
+    }
+
+    .bottom-menu-item:hover,
+    .bottom-menu-item:focus-visible {
+        background: var(--accent-subtle);
+        border-color: var(--border-subtle);
+        outline: none;
+    }
+
+    body.ending-active .mobile-bottom-bar {
         display: none;
     }
 
@@ -1236,7 +1303,7 @@ body.ending-active .play-again-button {
 }
 
 body.title-active #game-container,
-body.title-active .mobile-bottom-nav {
+body.title-active .mobile-bottom-bar {
     visibility: hidden;
     pointer-events: none;
 }
