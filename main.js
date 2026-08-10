@@ -17,7 +17,7 @@ import {
     showExaminationResult,
     showInterrogationResult
 } from './game/ui.js';
-import { loadGame, saveGame, startNewGame, clearSave } from './game/save.js';
+import { loadGame, saveGame, startNewGame, clearSave, hasSave } from './game/save.js';
 import { unlockAndStartMysteryMusic, restartMysteryMusic, setGamePlaying, stopMysteryMusic } from './game/media.js';
 
 /**
@@ -25,11 +25,6 @@ import { unlockAndStartMysteryMusic, restartMysteryMusic, setGamePlaying, stopMy
  */
 function initGame(forceNew = false) {
     document.body.classList.remove('ending-active');
-
-    const stats = document.getElementById('game-stats');
-    const journal = document.getElementById('journal-sidebar');
-    if (stats) stats.style.display = '';
-    if (journal) journal.style.display = '';
 
     if (forceNew) {
         startNewGame();
@@ -162,40 +157,81 @@ function handleAccusation(suspectId, weaponId) {
     updateUI();
 }
 
+function hideTitleScreen() {
+    const titleScreen = document.getElementById('title-screen');
+    if (titleScreen) {
+        titleScreen.classList.add('hidden');
+    }
+    document.body.classList.remove('title-active');
+}
+
+function showTitleScreen() {
+    const titleScreen = document.getElementById('title-screen');
+    const continueBtn = document.getElementById('title-continue-btn');
+
+    document.body.classList.add('title-active');
+    document.body.classList.remove('ending-active');
+
+    if (titleScreen) {
+        titleScreen.classList.remove('hidden');
+    }
+
+    if (continueBtn) {
+        continueBtn.classList.toggle('hidden', !hasSave());
+    }
+}
+
+function enterPlay(forceNew) {
+    hideTitleScreen();
+    unlockAndStartMysteryMusic();
+    initGame(forceNew);
+    if (!gameState.gameOver) {
+        restartMysteryMusic(gameState.timeRemaining);
+    }
+}
+
+function wireTitleScreen() {
+    const beginBtn = document.getElementById('title-begin-btn');
+    const continueBtn = document.getElementById('title-continue-btn');
+
+    if (beginBtn) {
+        beginBtn.addEventListener('click', () => enterPlay(true));
+    }
+
+    if (continueBtn) {
+        continueBtn.addEventListener('click', () => enterPlay(false));
+        continueBtn.classList.toggle('hidden', !hasSave());
+    }
+}
+
 window.addEventListener('gameStateChanged', () => {
     saveGame();
     updateUI();
 });
 
 window.addEventListener('playAgain', () => {
-    initGame(true);
+    setGamePlaying(false);
+    stopMysteryMusic(true);
+    showTitleScreen();
 });
 
 function startGame() {
     const narrative = document.getElementById('scene-narrative');
     const choicesContainer = document.getElementById('choices-container');
+    const titleScreen = document.getElementById('title-screen');
     
-    if (!narrative || !choicesContainer) {
+    if (!narrative || !choicesContainer || !titleScreen) {
         setTimeout(startGame, 100);
         return;
     }
     
     try {
         initUI();
-        initGame(false);
-
-        const unlockMusicOnce = () => {
-            document.removeEventListener('pointerdown', unlockMusicOnce);
-            document.removeEventListener('keydown', unlockMusicOnce);
-            unlockAndStartMysteryMusic();
-            if (!gameState.gameOver) {
-                restartMysteryMusic(gameState.timeRemaining);
-            }
-        };
-        document.addEventListener('pointerdown', unlockMusicOnce);
-        document.addEventListener('keydown', unlockMusicOnce);
+        wireTitleScreen();
+        showTitleScreen();
     } catch (error) {
         console.error(error);
+        hideTitleScreen();
         if (narrative) {
             narrative.innerHTML = `
                 <div class="location">Grand Hall</div>

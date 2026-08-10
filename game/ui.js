@@ -701,10 +701,7 @@ export function renderEnding(endingId) {
         choicesContainer.appendChild(playAgainButton);
     }
     
-    const stats = document.getElementById('game-stats');
-    const journal = document.getElementById('journal-sidebar');
-    if (stats) stats.style.display = 'none';
-    if (journal) journal.style.display = 'none';
+    // Ending chrome is handled via body.ending-active in CSS (avoids inline display fights)
 }
 
 /**

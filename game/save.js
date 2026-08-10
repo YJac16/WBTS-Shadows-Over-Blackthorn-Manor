@@ -104,6 +104,23 @@ export function loadGame() {
 }
 
 /**
+ * Whether a resumable in-progress save exists
+ * @returns {boolean}
+ */
+export function hasSave() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) {
+            return false;
+        }
+        const data = JSON.parse(raw);
+        return Boolean(data && !data.gameOver && data.activeScenarioId);
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Clear saved game
  */
 export function clearSave() {
