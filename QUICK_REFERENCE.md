@@ -52,7 +52,7 @@ User clicks → main.js (handleAction)
 
 ## Key Constants
 
-- **Max Time**: 12 turns (defined in `gameState.maxTime`)
+- **Max Time**: 30 turns (defined in `gameState.maxTime`)
 - **Max Suspicion**: 100 (defined in `gameState.maxSuspicion`)
 - **True Murderer**: 'eleanor' (Eleanor Blackthorn)
 - **True Weapon**: 'poison'

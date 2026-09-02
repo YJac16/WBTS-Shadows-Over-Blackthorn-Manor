@@ -26,7 +26,7 @@ This is Episode 1 of a browser-based, choice-driven murder mystery game series p
 - Dark theme, atmospheric, no bright colors
 
 ## Game Mechanics
-- Time system: 12 turns, each action consumes time
+- Time system: 30 turns, each action consumes time
 - Suspicion system: Actions can raise suspicion
 - Clue journal: Auto-updates as clues are discovered
 - Accusation phase: Player must choose murderer and weapon

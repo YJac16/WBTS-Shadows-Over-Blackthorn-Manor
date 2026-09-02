@@ -24,7 +24,7 @@ The entire game state is managed in a single `gameState` object:
 
 ```javascript
 gameState = {
-    timeRemaining: 12,           // Turns remaining
+    timeRemaining: 30,           // Turns remaining
     suspicion: 0,                 // Suspicion level
     currentLocation: 'grandHall', // Current room
     visitedRooms: Set,            // Tracked rooms

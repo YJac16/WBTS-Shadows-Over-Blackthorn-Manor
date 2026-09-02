@@ -11,7 +11,7 @@ You are an investigator trapped at Blackthorn Manor during a violent storm. Char
 
 ### Core Mechanics
 
-- **Time System**: You have 12 turns to solve the mystery
+- **Time System**: You have 30 turns to solve the mystery
 - **Investigation**: Explore rooms, examine objects, interrogate suspects
 - **Clue Journal**: Automatically tracks discovered clues
 - **Suspicion System**: Your actions can raise suspicion

@@ -237,7 +237,7 @@ export function syncMysteryMusicTempo(timeRemaining) {
  * Restart soft music for a new playthrough
  * @param {number} timeRemaining
  */
-export function restartMysteryMusic(timeRemaining = 20) {
+export function restartMysteryMusic(timeRemaining = 30) {
     mediaState.gamePlaying = true;
     stopMysteryMusic(true);
     mediaState.lastTimeRemaining = timeRemaining;
