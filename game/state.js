@@ -25,8 +25,8 @@ export const gameState = {
     activeScenario: null,
     
     // Time system
-    timeRemaining: 20,
-    maxTime: 20,
+    timeRemaining: 30,
+    maxTime: 30,
     
     // Suspicion system
     suspicionLevel: 0,
@@ -113,8 +113,8 @@ export function resetGameState() {
     gameState.currentLocation = 'grandHall';
     gameState.phase = 'investigation';
     
-    gameState.timeRemaining = 20;
-    gameState.maxTime = 20;
+    gameState.timeRemaining = 30;
+    gameState.maxTime = 30;
     
     gameState.suspicionLevel = 0;
     
